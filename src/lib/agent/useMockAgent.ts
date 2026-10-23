@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { mockReply } from "./mock-reply";
 import type { Thread } from "../chat";
 
-export function useMockAgent(thread: Thread, onChange: (thread: Thread) => void) {
+export function useMockAgent(thread: Thread, onChange: (thread: Thread) => void, _previousMessages?: Thread["messages"]) {
   const [pending, setPending] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);

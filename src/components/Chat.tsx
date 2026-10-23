@@ -19,14 +19,15 @@ import { reasoningOptions } from "../../shared/agent-config";
 import { Select } from "./ui/Select";
 import { useAgent } from "../lib/agent/useAgent";
 export function Chat({
-  thread,
+  thread, previousMessages, onReconnect, reconnecting,
   onChange,
 }: {
+  previousMessages?: Message[]; onReconnect?: () => void; reconnecting?: boolean;
   thread: Thread;
   onChange: (thread: Thread) => void;
 }) {
   const [draft, setDraft] = useState("");
-  const agent = useAgent(thread, onChange);
+  const agent = useAgent(thread, onChange, previousMessages);
   const { pending } = agent;
   const [style, setStyle] = useState("Auto");
   const [attachments, setAttachments] = useState<string[]>([]);
@@ -145,7 +146,7 @@ export function Chat({
         {agent.activity.map((label, index) => (
           <div className="thinking" role="status" key={`${label}-${index}`}><Sparkles size={14} />{label}</div>
         ))}
-        {agent.error && <p className="agent-error" role="alert">{agent.error}</p>}
+        {agent.error && <div className="agent-error" role="alert"><p>{agent.error}</p>{onReconnect && <Button disabled={reconnecting} onClick={onReconnect}>{reconnecting ? "Återansluter…" : "Återanslut chatten"}</Button>}</div>}
         <div ref={bottom} />
       </div>
       <div className="composer-area">

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useEveAgent, type EveMessage } from "eve/react";
 import type { Message, Thread } from "../chat";
 import { accessToken } from '../supabase';
@@ -12,13 +12,19 @@ function textMessages(messages: readonly EveMessage[]): Message[] {
     })).filter((message) => message.content.length > 0);
 }
 
-export function useLiveAgent(thread: Thread, onChange: (thread: Thread) => void) {
+export function useLiveAgent(thread: Thread, onChange: (thread: Thread) => void, previousMessages: Message[] = []) {
   const latest = useRef(thread);
   useLayoutEffect(() => { latest.current = thread; }, [thread]);
   const [controlError, setControlError] = useState("");
   function save(patch: Partial<Thread>) {
     latest.current = { ...latest.current, ...patch };
     onChange(latest.current);
+  }
+  function withHistory(live: Message[], stored: Message[]) {
+    if (!live.length) return stored;
+    const first = stored.findIndex(m => m.role === live[0].role && m.content === live[0].content);
+    const prefix = first >= 0 ? stored.slice(0, first) : previousMessages;
+    return [...prefix, ...live];
   }
   const agent = useEveAgent({
     auth: { bearer: accessToken },
@@ -29,18 +35,24 @@ export function useLiveAgent(thread: Thread, onChange: (thread: Thread) => void)
     onSessionChange(session) {
       if (session && latest.current.sessionId !== session.sessionId) save({ sessionId: session.sessionId });
     },
-    onFinish(snapshot) { save({ messages: textMessages(snapshot.data.messages) }); },
+    onFinish(snapshot) { save({ messages: withHistory(textMessages(snapshot.data.messages), latest.current.messages) }); },
   });
+  const [resumeStalled, setResumeStalled] = useState(false);
+  useEffect(() => {
+    if (agent.status !== 'resuming') return;
+    const timer = setTimeout(() => setResumeStalled(true), 10000);
+    return () => clearTimeout(timer);
+  }, [agent.status]);
   const messages = useMemo(() => textMessages(agent.data.messages), [agent.data.messages]);
   const lastTurn = Object.values(agent.conversation.turns).at(-1);
   const activity = agent.data.messages.flatMap((message) => message.parts.flatMap((part) =>
     part.type === "dynamic-tool" && part.state !== "output-available" && part.state !== "output-error"
       ? [part.toolMetadata?.eve?.label ?? "Arbetar i workspace"] : []));
   return {
-    messages: messages.length ? messages : thread.messages,
+    messages: withHistory(messages, thread.messages),
     pending: agent.status === "submitted" || agent.status === "streaming",
     blocked: agent.status === "resuming",
-    error: controlError || (agent.error || lastTurn?.status === "failed" ? "Svaret kunde inte slutföras. Försök igen. Om chatten inte återansluter efter en serveromstart, ladda om sidan." : ""),
+    error: controlError || ((resumeStalled && agent.status === 'resuming') || agent.error || lastTurn?.status === "failed" ? "Svaret kunde inte slutföras. Återanslut chatten och skicka frågan igen. Din sparade historik finns kvar." : ""),
     activity,
     note: agent.status === "resuming" ? "Återansluter till samtalet…" : "Samtalet sparas i ditt workspace",
     send(text: string, style: string) {
