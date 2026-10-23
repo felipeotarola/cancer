@@ -20,6 +20,13 @@ const globalLinks: [LucideIcon, string][] = [
 ];
 const workspaceLinks: [LucideIcon, string][] = [[House, "Översikt"]];
 type Props = {
+  workspaces?: { id: string; name: string }[];
+  workspaceId?: string;
+  onWorkspaceChange?: (id: string) => void;
+  onCreateWorkspace?: () => void;
+  canCreateWorkspace?: boolean;
+  workspaceName?: string;
+  creatingChat?: boolean;
   threads: Thread[];
   activeId: string;
   view: string;
@@ -28,6 +35,9 @@ type Props = {
   onView: (view: string) => void;
 };
 export function Sidebar({
+  workspaceName = 'OpenCancer',
+  workspaces, workspaceId, onWorkspaceChange, onCreateWorkspace, canCreateWorkspace,
+  creatingChat = false,
   threads,
   activeId,
   view,
@@ -61,14 +71,18 @@ export function Sidebar({
           <span className="workspace-avatar">A</span>
           <Select
             aria-label="Välj workspace"
-            defaultValue="personal"
-            options={[
+            value={workspaceId || "personal"}
+            onValueChange={id => {
+              if (id === 'create-workspace') onCreateWorkspace?.();
+              else onWorkspaceChange?.(id);
+            }}
+            options={[...(workspaces?.map(w => ({ value: w.id, label: w.name })) || [
               {
                 value: "personal",
-                label: "Min workspace",
-                description: "Din personliga arbetsyta",
+                label: workspaceName,
+                description: "Arbetsyta för cancerforskning",
               },
-            ]}
+            ]), ...(canCreateWorkspace ? [{ value: 'create-workspace', label: '＋ Nytt workspace' }] : [])]}
           />
         </div>
         {workspaceLinks.map(([Icon, label]) => (
@@ -86,7 +100,7 @@ export function Sidebar({
         <h2 className="nav-section-title">
           Chattar<span className="summary-count">{threads.length}</span>
         </h2>
-        <Button className="nav-link" onClick={onNew}>
+        <Button className="nav-link" onClick={onNew} disabled={creatingChat}>
           <CirclePlus />
           Ny chatt
         </Button>

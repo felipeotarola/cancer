@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const workspaceSummarySchema = z.object({
-  id: z.literal("personal"),
+  id: z.string().uuid(),
   name: z.string(),
   capabilities: z.object({ chat: z.literal(true), serverFiles: z.literal(false) }),
 });

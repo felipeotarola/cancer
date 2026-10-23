@@ -53,8 +53,8 @@ test("quick actions sit side by side and stack in a narrow chat", async ({
   page,
 }) => {
   await page.goto("/");
-  const ideas = page.getByRole("button", { name: "Bolla en idé" });
-  const plan = page.getByRole("button", { name: "Gör en plan" });
+  const ideas = page.getByRole("button", { name: "Utforska en hypotes" });
+  const plan = page.getByRole("button", { name: "Planera en översikt" });
   await expect(ideas).toBeVisible();
   const first = await ideas.boundingBox();
   const second = await plan.boundingBox();
@@ -70,6 +70,6 @@ test("quick actions sit side by side and stack in a narrow chat", async ({
   expect(narrowSecond!.y).toBeGreaterThan(narrowFirst!.y);
   await ideas.click();
   await expect(
-    page.getByRole("article", { name: "Agent Workspace", exact: true }),
-  ).toContainText("steg för steg");
+    page.getByRole("article", { name: "OpenCancer", exact: true }),
+  ).toContainText("forskningsfråga");
 });

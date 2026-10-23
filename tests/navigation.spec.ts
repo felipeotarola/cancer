@@ -4,9 +4,9 @@ test("workspace reaches the top; agent and integrations use the full main area",
   page,
 }) => {
   await page.goto("/");
-  await expect(page).toHaveTitle("Agent Workspace — Din workspace");
+  await expect(page).toHaveTitle("OpenCancer — Din workspace");
   await expect(page.locator(".brand strong").first()).toHaveText(
-    "Agent Workspace",
+    "OpenCancer",
   );
   const panel = page.locator(".workspace-pane");
   expect(await panel.evaluate((el) => el.getBoundingClientRect().top)).toBe(0);

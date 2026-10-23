@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { workspaceResponse } from "../../server/http/workspace.ts";
-import { workspaceSummarySchema } from "../../shared/workspace.ts";
 
 async function withRuntime(development: boolean, action: () => Promise<void>) {
   const before = { ...process.env };
@@ -16,12 +15,10 @@ async function withRuntime(development: boolean, action: () => Promise<void>) {
   }
 }
 
-test("local workspace API returns the typed service contract without claiming access to browser files", async () => {
+test("local workspace API also requires a real Supabase session", async () => {
   await withRuntime(true, async () => {
     const response = await workspaceResponse(new Request("http://localhost/api/workspace"));
-    assert.equal(response.status, 200);
-    const workspace = workspaceSummarySchema.parse(await response.json());
-    assert.equal(workspace.capabilities.serverFiles, false);
+    assert.equal(response.status, 401);
     assert.equal(response.headers.get("cache-control"), "no-store");
   });
 });

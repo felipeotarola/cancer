@@ -49,7 +49,7 @@ export default function AgentDiagram({ dark }: { dark: boolean }) {
         },
         {
           id: "agent",
-          data: { label: "Agent Workspace" },
+          data: { label: "OpenCancer" },
           position: compact ? { x: 0, y: 135 } : { x: 245, y: 0 },
           className: "primary-flow-node",
         },

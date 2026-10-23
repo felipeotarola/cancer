@@ -17,7 +17,7 @@ export type Message = {
   role: "user" | "assistant";
   content: string;
 };
-export type Thread = { id: string; title: string; messages: Message[]; sessionId?: string };
+export type Thread = { id: string; title: string; messages: Message[]; sessionId?: string; workspaceId?: string };
 const storageKey = import.meta.env.VITE_AGENT_MODE === "mock"
   ? "syna-demo-threads-v1" : "agent-workspace-threads-v1";
 export function newThread(): Thread {

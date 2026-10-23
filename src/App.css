@@ -620,6 +620,23 @@
   font-size: 12px;
   flex-shrink: 0;
 }
+.welcome-workspace {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.welcome-workspace p {
+  margin: 0;
+  font: var(--type-label);
+}
+.welcome-workspace small {
+  color: var(--muted-foreground);
+  font: var(--type-caption);
+}
 .message-list {
   max-width: 720px;
   margin: auto;
@@ -1101,3 +1118,9 @@
 }
 
 .agent-error { margin: 16px 24px; color: var(--color-ink-muted); font: var(--type-label); max-width: 60ch; }
+
+.sidebar-account { flex-shrink: 0; }
+.sidebar-account .account { width: 100%; }
+.sidebar-account .account-copy { min-width: 0; flex: 1; }
+.sidebar-account .account-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-logout { margin: 0 12px 12px; }

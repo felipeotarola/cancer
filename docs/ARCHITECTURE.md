@@ -1,70 +1,43 @@
-# Agent Workspace architecture
+# OpenCancer architecture
 
-## First working slice
+## Identity and data access
 
-The existing React/Vite frontend stays in place. Eve 0.80.1 provides the agent backend, HTTP session protocol, event streaming, and durable execution. There is no second handwritten agent loop or message-stream parser.
+AuthGate uses Supabase Auth. The public `/api/auth/config` endpoint supplies only the publishable key and URL. The frontend resolves its current bearer token before each application/Eve request. `server/auth.ts` validates it with Supabase `auth.getUser()`.
 
-```text
-React Chat
-  → src/lib/agent/useLiveAgent.ts (eve/react)
-  → same-origin /eve/v1/* (Vite proxy locally)
-  → agent/channels/eve.ts (route authentication)
-  → Eve session + agent/instructions.md + agent/agent.ts
-  → agent/tools/get_workspace.ts
-  → server/services/workspace.ts
+ResearchWorkspace loads the current account's workspaces and chat catalog. React state is scoped by authenticated user and workspace. Production chats never read or write the old anonymous localStorage index. Explicit mock-mode tests keep separate browser-only storage.
 
-/api/workspace
-  → agent/channels/workspace.ts (HTTP transport)
-  → server/http/workspace.ts (authentication and response)
-  → server/services/workspace.ts (same application logic)
-```
+Routes in `agent/channels/workspace.ts` delegate to `server/http/research.ts`. The user Supabase client forwards the bearer token; RLS applies to every read/create. The server-only Supabase client is used for session bindings and runtime message persistence, always with a verified owner and stored session mapping. The secret key is never returned by the public config endpoint. No raw database password is required at runtime.
 
-## Boundaries
+## Tables and functions
 
-| Layer | Owns | Avoid |
-| --- | --- | --- |
-| React | Rendering, drafts, navigation, session attachment | Provider credentials, database queries, agent loops |
-| Agent | Instructions, model choice, tool schemas and tool orchestration | Duplicating application rules in prompts |
-| HTTP handlers | Authentication, request validation, response shape | Business logic inside route definitions |
-| Application services | Workspace capabilities and future product operations | React imports and transport assumptions |
-| Shared contracts | Zod schemas and transport-neutral types | Secrets and server I/O |
+- cancer_workspaces: owner, name, default flag.
+- cancer_chats: workspace, owner, title and timestamps; composite foreign keys prevent cross-owner associations.
+- cancer_sessions: server-managed chat-to-Eve-session binding.
+- cancer_messages: server-managed user/assistant text, ordered by an identity sequence.
+- cancer_migrations: applied migration names/checksums; unavailable to browser roles.
 
-`get_workspace` is intentionally read-only and exposes only the current workspace's name and capabilities. Optional Eve default tools and the root delegation tool are disabled. No external integrations, shell tool, or write operations are enabled. The local sandbox uses just-bash for portable runtime initialization, without Docker.
+All tables have RLS. Anonymous clients have no grants. Authenticated users can access only their own rows and cannot write session bindings or history directly. cancer_ensure_workspace runs with the caller's permissions. cancer_bind_session and cancer_save_message are callable only by service_role, validate owner associations, and perform atomic database updates.
 
-## Session lifecycle
+The SQL editor installer is transactional and intended for new projects only. The optional PostgreSQL CLI migrator uses the same checksummed migration files and never resets a shared schema.
 
-Each app thread stores an optional Eve session ID. Switching threads remounts the keyed chat client. A saved session is replayed from cursor zero; Eve deduplicates events and restores authoritative history. The local text cache is for display while reconnecting, not the model's source of history.
+## Chat lifecycle
 
-The client blocks sends during replay, streams assistant text, displays active tool labels, and sends durable cancellation when Stop is pressed. Switching views disconnects the browser stream without cancelling work; returning reattaches. Starting a new chat starts a separate Eve session. UI mock mode is explicit and uses a separate localStorage key. API failures never select it automatically.
+The UI saves a chat before opening Eve. LiveChat requests an idle session with x-cancer-chat-id. The creation wrapper checks ownership, reuses a binding when present, otherwise creates an idle Eve session and calls the binding RPC. The RPC locks the chat row and returns one canonical binding. Concurrent requests can produce unused idle candidates, but return the same canonical session; unbound candidates cannot pass the session ACL and never receive model input.
 
-Eve's local workflow world writes under `.eve/.workflow-data`. It is independent of any database in Personal Agent Template. Development restart recovery follows Eve's lifecycle: use `eve dev --resume` when explicitly recovering retained runs. Production requires persistent workflow storage and a separate database-backed thread catalog if users need cross-device discovery.
+The UI then uses eve/react with the saved session ID and dynamic bearer authentication. An ownership ACL protects every stream, send and control request: Eve itself does not supply one. The onMessage hook records user text; message.completed records assistant text without depending on an open browser. get_workspace resolves the workspace from the trusted session mapping rather than client context.
 
-## Identity and storage
+Eve workflow/events remain in its own store. Supabase stores the application catalog and displayed text history, not the full runtime. Production/restart recovery needs durable Eve storage. Workspace membership is supported as described below; simultaneous content editing is not implemented yet.
 
-The initial app is one local personal workspace. Both APIs share `server/auth.ts`: local development is admitted, while production has a rejecting placeholder. No caller-supplied user/workspace ID grants access. Add the real app-session verifier here before multi-user use, then pass its principal into scoped repositories and check resource ownership inside services and tools.
+## Workspace sharing
 
-Workspace files remain browser-local. The backend cannot list or read them. Add a file repository/storage adapter and a validated upload route when file ingestion is implemented; both the UI and agent tools should use the same scoped service. Do not teach the agent that filenames imply access to contents.
+Migration 003 adds cancer_workspace_shares. Owners grant and revoke access by email through /api/workspace-shares. Access requires a matching, verified email in auth.users. An address can be added before signup; no notification email is sent. Only owners manage shares. Members see the workspace and can create their own private chats; chat/session/message access stays private and also requires current workspace access. Revocation blocks new requests and server message writes. Browser-local files are not shared.
 
-## Adapting the template
+## Files and hosting
 
-1. Change the instructions and model in code.
-2. Add a feature service under `server/services/` with explicit inputs and outputs.
-3. Define its shared schema in `shared/` when it crosses a boundary.
-4. Expose a thin HTTP route for the UI and a typed Eve tool for the agent.
-5. Introduce a repository only when that feature needs real persistence; keep storage dependencies behind the service.
-6. Put external integrations under `agent/connections/` when there is a concrete integration to connect.
+Workspace files are still browser-only. There are no analysis, upload or agent file-reading tools yet. Optional Eve tools/delegation remain disabled; Eve's upload policy rejects files.
 
-No configuration screens, plugin registry, generic provider factory, or speculative database layer are necessary for this first slice.
+Local startup runs Vite on 5173 and Eve on 2002. Production must serve the UI and proxy app, Eve and workflow callback routes to the server. Runtime credentials and durable workflow storage require deployment configuration. Local startup or a successful build does not deploy the app.
 
-## Development and deployment
+## Model and reasoning
 
-`npm run dev` starts two loopback services under Node 24. The Vite watcher ignores Eve's generated directories to avoid rebuild loops and Windows directory locks. `npm run build` builds both peers. Serve `dist/` as the web app and forward `/api/`, `/eve/`, and `/.well-known/workflow/` to the Eve Node service in a future deployment; the latter prefix is required for workflow callbacks. Do not publish `vite preview` as the backend.
-
-Credentials belong in `.env` or the host's server environment. `.env.example` is the only tracked environment file. No credentials, database connections, or runtime stores are copied from the source Nuxt project.
-
-## Verification limits
-
-- Unit tests cover the shared workspace response contract and rejection of production callers, including spoofed development headers.
-- Existing Playwright tests run UI-only mock mode on a separate port.
-- The local real runtime was checked for health, workspace API, session acceptance, event replay, cancellation, and error rendering.
-- A valid model connection is still required to verify actual AI generation and model-selected tool use. File ingestion, production auth, cross-device thread storage, and deployment are not part of this slice.
+The agent calls GPT-6 Luna directly through `eve/models/openai` using server-only OPENAI_API_KEY. The composer sends x-cancer-reasoning on each turn. The authenticated channel allowlists that preference, adds it to the current caller attributes, and the step model resolver passes it as OpenAI reasoningEffort. Auto and unknown values resolve to medium. Supported explicit values: none, low, medium, high, xhigh, max. Provider-native options preserve max, which is outside Eve 0.80.1 generic reasoning enum.

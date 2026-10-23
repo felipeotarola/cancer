@@ -11,6 +11,7 @@ import {
   PanelLeftOpen,
   PanelLeftClose,
   PanelRight,
+  Share2,
   Menu,
   Moon,
   Sun,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import { Sidebar } from "./components/Sidebar";
 import { Chat } from "./components/Chat";
+import { LiveChat } from './components/LiveChat';
 import { Workspace } from "./components/Workspace";
 import { PanelRail } from "./components/PanelRail";
 import { FeaturePage } from "./components/FeaturePage";
@@ -31,8 +33,21 @@ import { loadThreads, saveThreads, newThread, type Thread } from "./lib/chat";
 import "./App.css";
 const DesignSystem = lazy(() => import("./components/DesignSystem"));
 
-export default function App() {
-  const [threads, setThreads] = useState<Thread[]>(loadThreads);
+export default function App({ initialThreads, createRemoteChat, onCreateWorkspace, onShareWorkspace, workspaces, workspaceId, onWorkspaceChange, accountEmail, onLogout, workspaceName = 'OpenCancer' }: {
+  onShareWorkspace?: () => void;
+  workspaces?: { id: string; name: string }[];
+  workspaceId?: string;
+  onWorkspaceChange?: (id: string) => void;
+  accountEmail?: string;
+  onLogout?: () => void;
+  initialThreads?: Thread[];
+  createRemoteChat?: () => Promise<Thread>;
+  workspaceName?: string;
+  onCreateWorkspace?: () => void;
+} = {}) {
+  const [threads, setThreads] = useState<Thread[]>(() => initialThreads?.length ? initialThreads : initialThreads ? [{ id: 'empty', title: 'Ny chatt', messages: [] }] : loadThreads());
+  const [chatError, setChatError] = useState('');
+  const [creatingChat, setCreatingChat] = useState(false);
   const [activeId, setActiveId] = useState(() => threads[0].id);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
@@ -65,8 +80,8 @@ export default function App() {
     view === "Agenten" || view === "Integrationer" || view === "Designsystem";
 
   useEffect(() => {
-    saveThreads(threads);
-  }, [threads]);
+    if (!createRemoteChat) saveThreads(threads);
+  }, [threads, createRemoteChat]);
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
     try {
@@ -102,10 +117,15 @@ export default function App() {
     setPane("chat");
     setMobileNav(false);
   }
-  function createChat() {
-    const thread = newThread();
-    setThreads((prev) => [thread, ...prev]);
-    selectChat(thread.id);
+  async function createChat() {
+    if (creatingChat) return;
+    setCreatingChat(true); setChatError('');
+    try {
+      const thread = createRemoteChat ? await createRemoteChat() : newThread();
+      setThreads((prev) => [thread, ...prev.filter(t => t.id !== 'empty')]);
+      selectChat(thread.id);
+    } catch (e) { setChatError((e as Error).message); }
+    finally { setCreatingChat(false); }
   }
   function openView(next: string) {
     window.history.replaceState(
@@ -126,7 +146,14 @@ export default function App() {
   }
   const sidebar = (
     <Sidebar
-      threads={threads}
+      threads={threads.filter(t => t.id !== 'empty')}
+      workspaceName={workspaceName}
+      workspaces={workspaces}
+      workspaceId={workspaceId}
+      onWorkspaceChange={onWorkspaceChange}
+      onCreateWorkspace={() => { setMobileNav(false); onCreateWorkspace?.(); }}
+      canCreateWorkspace={!!onCreateWorkspace}
+      creatingChat={creatingChat}
       activeId={active.id}
       view={view}
       onSelect={selectChat}
@@ -149,6 +176,7 @@ export default function App() {
         <span>{standalone ? view : active.title}</span>
       </div>
       <div className="topbar-actions">
+        {onShareWorkspace && <Button shape="icon" className="icon-button" aria-label="Dela workspace" title="Dela workspace" onClick={onShareWorkspace}><Share2 size={18} /></Button>}
         {!standalone && (
           <Button
             shape="icon"
@@ -164,6 +192,21 @@ export default function App() {
     </header>
   );
 
+  const account = (
+    <div className="sidebar-account">
+      <div className="account">
+        <span className="avatar">DU</span>
+        <span className="account-copy">
+          <strong>Ditt konto</strong>
+          <small title={accountEmail}>{accountEmail || 'Personlig workspace'}</small>
+        </span>
+        <Button shape="icon" aria-label="Byt färgtema" onClick={() => setDark(!dark)}>
+          {dark ? <Sun size={16} /> : <Moon size={16} />}
+        </Button>
+      </div>
+      {onLogout && <Button className="account-logout" size="sm" onClick={onLogout}>Logga ut</Button>}
+    </div>
+  );
   return (
     <div className={`app-shell ${collapsed ? "nav-collapsed" : ""}`}>
       <aside
@@ -190,19 +233,7 @@ export default function App() {
             </Button>
           </div>
           {sidebar}
-          <Button
-            className="account"
-            onClick={() => setDark(!dark)}
-            title="Byt färgtema"
-            aria-label="Byt färgtema"
-          >
-            <span className="avatar">DU</span>
-            <span className="account-copy">
-              <strong>Ditt konto</strong>
-              <small>Personlig workspace</small>
-            </span>
-            {dark ? <Sun size={16} /> : <Moon size={16} />}
-          </Button>
+          {account}
         </div>
         <div
           className="sidebar-rail"
@@ -291,12 +322,11 @@ export default function App() {
             </Button>
           </div>
           {sidebar}
-          <Button className="nav-link" onClick={() => setDark(!dark)}>
-            {dark ? <Sun /> : <Moon />}Byt färgtema
-          </Button>
+          {account}
         </div>
       </dialog>
       <main className="main-shell">
+        {chatError && <div className="research-error" role="alert">{chatError}</div>}
         {standalone && (
           <>
             {header}
@@ -347,15 +377,9 @@ export default function App() {
                 Workspace
               </Button>
             </div>
-            <Chat
-              key={active.id}
-              thread={active}
-              onChange={(updated) =>
-                setThreads((prev) =>
-                  prev.map((t) => (t.id === updated.id ? updated : t)),
-                )
-              }
-            />
+            {active.id === 'empty' ? <div className="page-loading"><h1>Välkommen till {workspaceName}</h1><p>Starta ett samtal för att börja samla din forskning.</p><Button variant="primary" disabled={creatingChat} onClick={() => void createChat()}>{creatingChat ? 'Skapar…' : 'Starta chatt'}</Button>{onCreateWorkspace && <Button onClick={onCreateWorkspace}>Skapa nytt workspace</Button>}</div> : createRemoteChat ?
+              <LiveChat onCreateWorkspace={onCreateWorkspace} key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} /> :
+              <Chat onCreateWorkspace={onCreateWorkspace} key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} />}
           </section>
           <div
             className="divider"
@@ -445,6 +469,8 @@ export default function App() {
             <span className="resize-grip" aria-hidden="true" />
           </div>
           <Workspace
+            key={workspaceName}
+            workspaceName={workspaceName}
             view={view}
             onView={openView}
             open={workspaceOpen}
@@ -462,8 +488,8 @@ function Brand() {
         A
       </span>
       <span>
-        <strong>Agent Workspace</strong>
-        <small>Din personliga arbetsyta</small>
+        <strong>OpenCancer</strong>
+        <small>Arbetsyta för cancerforskning</small>
       </span>
     </div>
   );

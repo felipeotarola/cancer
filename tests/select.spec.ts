@@ -41,14 +41,14 @@ test("chat selection updates replies and dropdown works inside mobile navigation
   page,
 }) => {
   await page.goto("/");
-  const select = page.getByRole("combobox", { name: "Svarsstil", exact: true });
+  const select = page.getByRole("combobox", { name: "Resonemangsnivå", exact: true });
   await select.click();
-  await page.getByRole("option", { name: /Kortfattat/ }).click();
+  await page.getByRole("option", { name: /Låg/ }).click();
   await page.getByRole("textbox", { name: "Ditt meddelande" }).fill("Hej");
   await page.getByRole("button", { name: "Skicka meddelande" }).click();
   await expect(
-    page.getByRole("article", { name: "Agent Workspace", exact: true }),
-  ).toContainText("Det här är ett simulerat svar.");
+    page.getByRole("article", { name: "OpenCancer", exact: true }),
+  ).toContainText("Hej");
   await page.setViewportSize({ width: 390, height: 844 });
   await page
     .getByRole("button", { name: "Öppna navigation", exact: true })
@@ -59,9 +59,9 @@ test("chat selection updates replies and dropdown works inside mobile navigation
   });
   await workspaceSelect.click();
   await expect(
-    dialog.getByRole("option", { name: /Min workspace/ }),
+    dialog.getByRole("option", { name: /OpenCancer/ }),
   ).toBeVisible();
-  await page.getByRole("option", { name: /Min workspace/ }).click();
+  await page.getByRole("option", { name: /OpenCancer/ }).click();
   await expect(workspaceSelect).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();

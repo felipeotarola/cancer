@@ -6,7 +6,7 @@ test("chat, persistence, search, themes and panel controls", async ({
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Vad vill du göra idag?" }),
+    page.getByRole("heading", { name: "Vad vill du undersöka?" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Välj filer till workspace" }),
@@ -17,20 +17,20 @@ test("chat, persistence, search, themes and panel controls", async ({
   });
   await page
     .getByRole("textbox", { name: "Ditt meddelande" })
-    .fill("Hej Agent Workspace");
+    .fill("Hej OpenCancer");
   await page.getByRole("button", { name: "Skicka meddelande" }).click();
   await expect(
-    page.getByText("Agent Workspace skriver", { exact: true }),
+    page.getByText("OpenCancer skriver", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("article", { name: "Agent Workspace", exact: true }),
+    page.getByRole("article", { name: "OpenCancer", exact: true }),
   ).toContainText("Hej!");
   await page.reload();
   await expect(
     page.getByRole("article", { name: "Du", exact: true }),
-  ).toContainText("Hej Agent Workspace");
+  ).toContainText("Hej OpenCancer");
   await expect(
-    page.getByRole("article", { name: "Agent Workspace", exact: true }),
+    page.getByRole("article", { name: "OpenCancer", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Byt färgtema", exact: true })
@@ -51,7 +51,7 @@ test("chat, persistence, search, themes and panel controls", async ({
   await page.getByRole("button", { name: "Skicka meddelande" }).click();
   await page.getByRole("button", { name: "Stoppa svar" }).click();
   await expect(
-    page.getByRole("article", { name: "Agent Workspace", exact: true }),
+    page.getByRole("article", { name: "OpenCancer", exact: true }),
   ).toHaveCount(0);
   await page
     .getByRole("button", { name: "Sök chattar", exact: true })
@@ -59,11 +59,11 @@ test("chat, persistence, search, themes and panel controls", async ({
     .click();
   await page
     .getByRole("textbox", { name: "Sök chattar" })
-    .fill("Hej Agent Workspace");
+    .fill("Hej OpenCancer");
   await expect(page.locator(".desktop-sidebar .thread")).toHaveCount(1);
   await page.locator(".desktop-sidebar .thread").click();
   await expect(
-    page.getByRole("article", { name: "Agent Workspace", exact: true }),
+    page.getByRole("article", { name: "OpenCancer", exact: true }),
   ).toBeVisible();
   const separator = page.getByRole("separator");
   await separator.focus();
@@ -124,7 +124,7 @@ test("mobile navigation focus, workspace, dark chat and overflow", async ({
   await page.getByRole("textbox", { name: "Ditt meddelande" }).fill("Min plan");
   await page.getByRole("textbox", { name: "Ditt meddelande" }).press("Enter");
   await expect(
-    page.getByRole("article", { name: "Agent Workspace", exact: true }),
+    page.getByRole("article", { name: "OpenCancer", exact: true }),
   ).toContainText("steg för steg");
   await page.screenshot({
     path: "test-results/mobile-dark.png",

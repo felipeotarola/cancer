@@ -1,49 +1,45 @@
-# Agent Workspace
+# OpenCancer
 
-React + TypeScript + Vite workspace with an Eve agent backend. The original Personal Agent Template repository is a read-only reference, not a dependency.
+A cancer-research workspace built with React, Vite, Eve and Supabase Auth.
 
-## Run locally
+## Local setup
 
-Requires Node.js 24 and npm.
+Use Node.js 24. Copy `.env.example` to `.env` and configure all three values from the SAME Supabase project:
+
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY` for browser sign-in and RLS-protected queries.
+- `SUPABASE_SECRET_KEY` for server-only session binding and message persistence. Never prefix this with VITE_ or expose it to the browser.
+
+The application uses Supabase's Data API. No PostgreSQL password or DATABASE_URL is needed to run it. The supplied FRAME database is not used. Real model replies use `OPENAI_API_KEY` server-side to call GPT-6 Luna directly. The composer supports Auto (medium), none, low, medium, high, xhigh and max reasoning.
 
 ```sh
 npm ci
-# Copy .env.example to .env and set AI_GATEWAY_API_KEY for real model replies.
 npm run dev
 ```
 
-Open http://localhost:5173. This starts Vite on 5173 and Eve on 2001, bound to loopback. Vite forwards `/eve`, `/api`, and `/.well-known/workflow` to Eve. No shared database or source-project credentials are used.
+Open http://127.0.0.1:5173. Vite proxies `/api`, `/eve` and workflow callbacks to Eve on port 2002. Add the local app origin to Supabase Auth's allowed redirect URLs for email-confirmed signup. The public config endpoint returns only the Supabase URL and publishable key. `.env` is ignored by Git.
 
-If the system Node is older, a temporary Node 24 runtime can start both services:
+## Schema installation
 
-```sh
-npx --package=node@24 node scripts/dev.mjs
-```
+The schema is already installed in the configured Cue project. For a NEW empty project, run `npm run db:prepare` and execute `supabase/install.sql` in its SQL editor. It is a transactional first-time installer and deliberately fails if these app tables already exist. It creates only `cancer_` objects and records migration checksums in `cancer_migrations`.
 
-Change the model in `shared/agent-config.ts` and behavior in `agent/instructions.md`. Credentials stay on the server. The current model is the Eve scaffold default. Real inference needs a working model connection; an unavailable model displays an error and never silently returns a mock answer.
+For later CLI migrations, optionally supply a PostgreSQL `DATABASE_URL` for the same project and run `npm run db:migrate`. Preserve the connection port supplied by Supabase. Never reset the shared schema.
 
-For UI design without the backend, set `VITE_AGENT_MODE=mock` in `.env.local`, then run `npm run dev:ui`. Mock and real chat indexes use separate browser storage keys.
+## Auth and persistence
 
-## Architecture
+- Email/password login, signup, refresh and logout use Supabase Auth. Email confirmation follows the project's settings.
+- Application and chat-session requests validate tokens through `auth.getUser`. There is no local anonymous backend bypass.
+- Each user has a default workspace and can create/select more workspaces.
+- `cancer_workspaces`, `cancer_chats`, `cancer_messages`, `cancer_sessions` and `cancer_migrations` all have RLS enabled.
+- User queries carry the user's bearer token, so the database enforces ownership. Browser roles cannot write session bindings or forge message history.
+- Server-only RPC functions bind sessions and persist messages while checking the verified owner's ID. Eve stream, send and control endpoints check session ownership.
+- Messages are recorded on the server, including assistant completion after the browser disconnects.
+- Eve still owns workflow/event state under `.eve/`; Supabase holds the catalog, text history and session bindings. Production also needs durable Eve storage.
+- Workspaces are private per account. Invitations and shared membership/roles are future work.
+- Files remain browser-local: no upload, persistent document storage or agent file access yet. Analysis tools are future work.
+- Old anonymous browser chats are not automatically assigned to an account.
 
-- `src/`: React shell, components, and agent UI adapter.
-- `agent/`: Eve configuration, instructions, HTTP channels, and typed tools.
-- `server/`: application services, route handlers, and shared route-auth policy.
-- `shared/`: runtime-validated contracts and model choice.
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for boundaries, persistence, and how to extend the template.
-
-## Current scope
-
-- Live Eve client: streamed replies, tool activity, cancellation, and session replay after refresh or thread navigation.
-- Eve owns durable session history. The browser caches a thread index, session IDs, and displayed text. There is no cross-device thread catalog yet.
-- One personal workspace. `GET /api/workspace` and `get_workspace` share the same application service.
-- Workspace file selection and drag-and-drop remain browser-local. File contents are not sent to the backend or model. Chat attachments currently send filenames only.
-- Integration cards and the agent diagram remain UI previews.
-- Shared design system, light/dark themes, collapsible panels, drag resizing, and mobile navigation.
-- App and agent APIs permit local development. Production requests are rejected until application authentication is implemented. This is a local backend foundation, not a production deployment.
-
-## Checks
+## Verification
 
 ```sh
 npm run lint
@@ -51,25 +47,10 @@ npm run typecheck
 npm run test:unit
 npm run test:e2e
 npm run test:agent
+npm run test:auth
 npm run build
 ```
 
-Typechecking covers frontend, agent, server, and shared code. Browser tests run an isolated mock UI on port 5174; they do not prove live model inference. They require Google Chrome. `test:agent` checks the real local runtime; set `EVE_TEST_UNCONFIGURED=1` only against an unconfigured runtime to include missing-model, replay, and cancellation checks. `build` builds `dist/` for the UI and `.output/` for the Eve Node server. These are peer services: production hosting must serve the UI assets and forward backend routes. `vite preview` alone does not run the agent.
+UI tests use explicit mock mode on 5174. Runtime tests check the real login screen, safe public config and unauthenticated rejection on 5173. `test:auth` uses two temporary, confirmed Supabase users; verifies real login, RLS, cross-user rejection, chat persistence, browser reload, workspace creation and logout; then deletes only its own identities and their cascading app rows. Set `CANCER_TEST_MODEL=1` to additionally require real model inference. The model check is optional and is not implied by other passing tests.
 
-Eve runtime state, build artifacts, screenshots, and local credentials are ignored by Git. Dependency audit currently reports a moderate advisory in the sandbox's transitive `sprintf-js` dependency; sandbox shell tools are disabled. The vulnerable `undici` transitive version is overridden with a patched release.
-
-## Design and source
-
-The local Soft Orbit design system has shared tokens, controls, surfaces and semantic typography (Manrope headings / Inter UI and reading). Open **Designsystem** in the navigation or visit `/?view=design-system` to try components, themes, forms and dialogs. See [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for component contracts and type roles.
-
-Design tokens in src/tokens.css are reused from personal-agent-template/app/assets/css/qaa-tokens.css. Layout follows its DESIGN_SYSTEM.md. Vue components were reimplemented in React. The original repository is a read-only reference and is not a dependency.
-
-The panel interaction is an original implementation visually informed by [React Bits App Sidebar 1](https://pro.reactbits.dev/docs/app-ui/app-sidebar/app-sidebar-1) and [App Sidebar 2](https://pro.reactbits.dev/docs/app-ui/app-sidebar/app-sidebar-2). No React Bits Pro source code is included. The workspace reaches the top of the desktop viewport. Both panel edges share `PanelRail` and the same 420ms easing, with reduced-motion support and focus transfer. Mobile navigation uses a native modal dialog with entry/exit transitions.
-
-- src/App.tsx: shell, mobile drawer and resizable split.
-- src/components/: Sidebar, Chat and Workspace.
-- src/lib/chat.ts: thread index and browser cache.
-- src/lib/agent/: Eve adapter and explicit mock adapter.
-- src/tokens.css: palette and tokens; src/App.css: layout and controls.
-
-MIT template copyright 2026 Hugo Richard; original notice retained in LICENSE. Lucide and Inter retain their respective package licenses.
+The original repository is https://github.com/felipeotarola/agent-workspace-react. See `docs/DESIGN_SYSTEM.md` for the design system. MIT license notices are retained.

@@ -7,9 +7,9 @@ export default defineConfig({
   server: {
     watch: { ignored: ["**/.eve/**", "**/.output/**"] },
     proxy: {
-      "/eve": "http://127.0.0.1:2001",
-      "/api": "http://127.0.0.1:2001",
-      "/.well-known/workflow": "http://127.0.0.1:2001",
+      "/eve": "http://127.0.0.1:2002",
+      "/api": "http://127.0.0.1:2002",
+      "/.well-known/workflow": "http://127.0.0.1:2002",
     },
   },
 });

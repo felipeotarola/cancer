@@ -1,31 +1,26 @@
 import { test, expect } from "@playwright/test";
 
-test("real Eve server: health, authenticated workspace contract, and idle session acceptance", async ({ request }) => {
+test("real Eve server: public health and protected application/session routes", async ({ request }) => {
   const health = await request.get("/eve/v1/health");
   expect(health.ok()).toBe(true);
   expect(await health.json()).toMatchObject({ ok: true, status: "ready" });
   const workspace = await request.get("/api/workspace");
-  expect(workspace.ok()).toBe(true);
-  expect(await workspace.json()).toMatchObject({ id: "personal", capabilities: { serverFiles: false } });
+  expect(workspace.status()).toBe(401);
   const session = await request.post("/eve/v1/session", { data: {} });
-  expect(session.ok()).toBe(true);
-  expect(await session.json()).toMatchObject({ ok: true, sessionId: expect.any(String) });
+  expect(session.status()).toBe(401);
 });
 
-test("unconfigured model: visible failure, durable replay, and cancellation", async ({ page }) => {
-  test.skip(process.env.EVE_TEST_UNCONFIGURED !== "1", "Explicit opt-in: requires a local runtime without model credentials.");
+test("login screen renders and public config contains only browser-safe Supabase fields", async ({ page, request }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await page.getByRole("textbox", { name: "Ditt meddelande" }).fill("Test av agentkopplingen");
-  await page.getByRole("button", { name: "Skicka meddelande" }).click();
-  await expect(page.getByRole("alert")).toContainText("AI_GATEWAY_API_KEY", { timeout: 30_000 });
-  await page.reload();
-  await expect(page.getByRole("article", { name: "Du", exact: true })).toContainText("Test av agentkopplingen");
-  await expect(page.getByRole("textbox", { name: "Ditt meddelande" })).toBeEnabled();
-  await page.getByRole("textbox", { name: "Ditt meddelande" }).fill("Avbryt detta");
-  await page.getByRole("button", { name: "Skicka meddelande" }).click();
-  await page.getByRole("button", { name: "Stoppa svar" }).click();
-  await expect(page.getByRole("button", { name: "Skicka meddelande" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Välkommen tillbaka' })).toBeVisible();
+  const config = await (await request.get('/api/auth/config')).json();
+  expect(Object.keys(config).sort()).toEqual(['publishableKey', 'url']);
+  await page.getByRole('button', { name: 'Ny här? Skapa konto' }).click();
+  await expect(page.getByRole('heading', { name: 'Skapa ditt konto' })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/cancer-auth-mobile.png' });
   expect(errors).toEqual([]);
 });

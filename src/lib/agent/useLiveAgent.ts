@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useEveAgent, type EveMessage } from "eve/react";
 import type { Message, Thread } from "../chat";
+import { accessToken } from '../supabase';
 
 function textMessages(messages: readonly EveMessage[]): Message[] {
   return messages.filter((message) => message.role === "user" || message.role === "assistant")
@@ -20,6 +21,8 @@ export function useLiveAgent(thread: Thread, onChange: (thread: Thread) => void)
     onChange(latest.current);
   }
   const agent = useEveAgent({
+    auth: { bearer: accessToken },
+    prewarm: false,
     initialSession: thread.sessionId ? { sessionId: thread.sessionId, streamIndex: 0 } : undefined,
     resume: Boolean(thread.sessionId),
     followIdle: false,
@@ -37,13 +40,13 @@ export function useLiveAgent(thread: Thread, onChange: (thread: Thread) => void)
     messages: messages.length ? messages : thread.messages,
     pending: agent.status === "submitted" || agent.status === "streaming",
     blocked: agent.status === "resuming",
-    error: controlError || (agent.error || lastTurn?.status === "failed" ? "Kunde inte nå agenten eller slutföra svaret. Kontrollera att Eve körs och att AI_GATEWAY_API_KEY är angiven i .env." : ""),
+    error: controlError || (agent.error || lastTurn?.status === "failed" ? "Svaret kunde inte slutföras. Försök igen. Om chatten inte återansluter efter en serveromstart, ladda om sidan." : ""),
     activity,
-    note: agent.status === "resuming" ? "Återansluter till samtalet…" : "Eve · Samtalet sparas av agentservern",
+    note: agent.status === "resuming" ? "Återansluter till samtalet…" : "Samtalet sparas i ditt workspace",
     send(text: string, style: string) {
       setControlError("");
       if (!thread.messages.length) save({ title: text.slice(0, 42) });
-      void agent.send(text, { clientContext: { responseStyle: style, workspaceId: "personal" } }).catch(() => {
+      void agent.send(text, { headers: { 'x-cancer-reasoning': style }, clientContext: { workspaceId: thread.workspaceId ?? '' } }).catch(() => {
         // The Eve hook exposes the request failure through agent.error.
       });
     },

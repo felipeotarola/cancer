@@ -5,11 +5,13 @@ import { useEffect, useRef } from "react";
 import { WorkspaceFiles } from "./WorkspaceFiles";
 const tabs: [LucideIcon, string][] = [[House, "Översikt"]];
 export function Workspace({
+  workspaceName = 'OpenCancer',
   view,
   onView,
   open,
   onToggle,
 }: {
+  workspaceName?: string;
   view: string;
   onView: (view: string) => void;
   open: boolean;
@@ -40,7 +42,7 @@ export function Workspace({
         <header className="workspace-header">
           <div className="workspace-heading">
             <span className="workspace-avatar">A</span>
-            <span>Min workspace</span>
+            <span>{workspaceName}</span>
           </div>
           <nav aria-label="Workspace-vyer">
             {tabs.map(([Icon, label]) => (

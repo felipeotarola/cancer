@@ -15,7 +15,7 @@ function close(code = 0) {
   process.exitCode = code;
 }
 for (const [entry, args] of [
-  ["node_modules/eve/bin/eve.js", ["dev", "--no-ui", "--no-default-extensions", "--host", "127.0.0.1", "--port", "2001"]],
+  ["node_modules/eve/bin/eve.js", ["dev", "--resume", "--no-ui", "--no-default-extensions", "--host", "127.0.0.1", "--port", "2002"]],
   ["node_modules/vite/bin/vite.js", ["--host", "127.0.0.1", "--port", "5173", "--strictPort"]],
 ]) {
   const child = spawn(process.execPath, [entry, ...args], { stdio: "inherit", env: process.env });
