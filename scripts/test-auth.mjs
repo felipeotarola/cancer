@@ -93,7 +93,8 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await page.getByRole('button', { name: 'Öppna navigation', exact: true }).click();
-  await page.getByRole('button', { name: 'Logga ut', exact: true }).click();
+  await page.getByRole('button', { name: 'Öppna profilmeny', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Logga ut', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Välkommen tillbaka' })).toBeVisible();
   await page.screenshot({ path: 'test-results/cancer-auth-mobile.png' });
   assert.deepEqual(errors, []);

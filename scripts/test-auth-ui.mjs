@@ -40,7 +40,8 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await page.screenshot({ path: 'test-results/cancer-workspace-mobile-ui.png' });
   await page.getByRole('button', { name: 'Öppna navigation', exact: true }).click();
-  await page.getByRole('button', { name: 'Logga ut', exact: true }).click();
+  await page.getByRole('button', { name: 'Öppna profilmeny', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Logga ut', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Välkommen tillbaka' })).toBeVisible();
   assert.deepEqual(errors, []);
   console.log('PASS login/workspace creation/logout UI and mobile layout with intercepted test responses (not cloud integration)');

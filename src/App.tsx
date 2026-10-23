@@ -23,6 +23,7 @@ import {
   CirclePlus,
   SwatchBook,
 } from "lucide-react";
+import { ProfileMenu } from "./components/ProfileMenu";
 import { Sidebar } from "./components/Sidebar";
 import { Chat } from "./components/Chat";
 import { LiveChat } from './components/LiveChat';
@@ -33,7 +34,8 @@ import { loadThreads, saveThreads, newThread, type Thread } from "./lib/chat";
 import "./App.css";
 const DesignSystem = lazy(() => import("./components/DesignSystem"));
 
-export default function App({ initialThreads, createRemoteChat, onCreateWorkspace, onShareWorkspace, workspaces, workspaceId, onWorkspaceChange, accountEmail, onLogout, workspaceName = 'OpenCancer' }: {
+export default function App({ initialThreads, createRemoteChat, onCreateWorkspace, onShareWorkspace, onAccount, workspaces, workspaceId, onWorkspaceChange, accountEmail, onLogout, workspaceName = 'OpenCancer' }: {
+  onAccount?: () => void;
   onShareWorkspace?: () => void;
   workspaces?: { id: string; name: string }[];
   workspaceId?: string;
@@ -192,21 +194,7 @@ export default function App({ initialThreads, createRemoteChat, onCreateWorkspac
     </header>
   );
 
-  const account = (
-    <div className="sidebar-account">
-      <div className="account">
-        <span className="avatar">DU</span>
-        <span className="account-copy">
-          <strong>Ditt konto</strong>
-          <small title={accountEmail}>{accountEmail || 'Personlig workspace'}</small>
-        </span>
-        <Button shape="icon" aria-label="Byt färgtema" onClick={() => setDark(!dark)}>
-          {dark ? <Sun size={16} /> : <Moon size={16} />}
-        </Button>
-      </div>
-      {onLogout && <Button className="account-logout" size="sm" onClick={onLogout}>Logga ut</Button>}
-    </div>
-  );
+  const account = <ProfileMenu email={accountEmail} dark={dark} onTheme={() => setDark(!dark)} onLogout={onLogout} onAccount={onAccount ? () => { setMobileNav(false); onAccount(); } : undefined} />;
   return (
     <div className={`app-shell ${collapsed ? "nav-collapsed" : ""}`}>
       <aside

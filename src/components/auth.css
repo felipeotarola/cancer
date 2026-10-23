@@ -20,3 +20,14 @@
 .share-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .share-list li span { min-width: 0; overflow-wrap: anywhere; }
 .share-list li button { flex-shrink: 0; white-space: nowrap; }
+.account-identity { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--color-surface-muted); border-radius: 16px; margin-bottom: 24px; }
+.account-identity div { min-width: 0; }
+.account-identity strong { font: var(--type-label); }
+.account-identity p { margin: 4px 0 0; overflow-wrap: anywhere; color: var(--muted-foreground); font: var(--type-caption); }
+.account-form { display: grid; gap: 10px; }
+.account-form h3 { display: flex; align-items: center; gap: 10px; margin: 0; font: var(--type-heading); }
+.account-help { margin: 0 0 8px; color: var(--muted-foreground); font: var(--type-caption); }
+.account-form label { font: var(--type-label); }
+.account-form > button:last-child { margin-top: 8px; }
+.account-error { color: var(--color-danger); margin: 4px 0; }
+.account-notice { color: var(--color-accent-ink); margin: 4px 0; }

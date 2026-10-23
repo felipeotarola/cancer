@@ -5,6 +5,7 @@ import { api, supabase } from '../lib/supabase';
 import type { Thread } from '../lib/chat';
 import { Button } from './ui/Button';
 import { Dialog } from './ui/Dialog';
+import { AccountDialog } from './AccountDialog';
 import { ShareWorkspace } from './ShareWorkspace';
 type Workspace = { id: string; name: string; owner_id: string };
 export function ResearchWorkspace({ user }: { user: User }) {
@@ -14,6 +15,7 @@ export function ResearchWorkspace({ user }: { user: User }) {
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
   const [dialog, setDialog] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [name, setName] = useState('');
   const [retry, setRetry] = useState(0);
@@ -54,8 +56,9 @@ export function ResearchWorkspace({ user }: { user: User }) {
   return <div className="research-root">
     {error && <div className="research-error" role="alert">{error} <Button size="sm" onClick={() => setRetry(n => n + 1)}>Försök igen</Button></div>}
     {loaded && loaded.workspaceId === workspaceId ?
-      <App onShareWorkspace={workspace?.owner_id === user.id ? () => setSharing(true) : undefined} workspaces={workspaces} workspaceId={workspaceId} onWorkspaceChange={id => { setError(''); setWorkspaceId(id); }} accountEmail={user.email} onLogout={() => void logout()} onCreateWorkspace={() => setDialog(true)} key={workspaceId} initialThreads={loaded.threads} createRemoteChat={createChat} workspaceName={workspace?.name} /> :
+      <App onAccount={() => setAccountOpen(true)} onShareWorkspace={workspace?.owner_id === user.id ? () => setSharing(true) : undefined} workspaces={workspaces} workspaceId={workspaceId} onWorkspaceChange={id => { setError(''); setWorkspaceId(id); }} accountEmail={user.email} onLogout={() => void logout()} onCreateWorkspace={() => setDialog(true)} key={workspaceId} initialThreads={loaded.threads} createRemoteChat={createChat} workspaceName={workspace?.name} /> :
       <p className="page-loading" role="status">{error ? 'Workspacet kunde inte laddas.' : 'Laddar dina workspaces…'}</p>}
+    {accountOpen && <AccountDialog email={user.email} onClose={() => setAccountOpen(false)} />}
     {sharing && workspace && <ShareWorkspace key={workspace.id} workspaceId={workspace.id} name={workspace.name} onClose={() => setSharing(false)} />}
     <Dialog open={dialog} onClose={() => setDialog(false)} title="Nytt workspace" description="Samla chattar kring ett forskningsområde.">
       <form onSubmit={event => { event.preventDefault(); void createWorkspace(); }}>

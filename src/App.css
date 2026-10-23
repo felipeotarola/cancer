@@ -1124,3 +1124,17 @@
 .sidebar-account .account-copy { min-width: 0; flex: 1; }
 .sidebar-account .account-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-logout { margin: 0 12px 12px; }
+.profile-account { padding: 8px; gap: 2px; }
+.profile-trigger { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; padding: 4px; border: 0; border-radius: 14px; color: inherit; background: transparent; cursor: pointer; text-align: left; }
+.profile-trigger:focus-visible { outline: 2px solid var(--color-accent-ink); outline-offset: 2px; }
+.profile-chevron { flex-shrink: 0; color: var(--muted-foreground); transition: transform 160ms; }
+.profile-trigger[data-state="open"] .profile-chevron { transform: rotate(180deg); }
+.profile-menu { z-index: 100; width: 260px; max-width: calc(100vw - 24px); padding: 8px; border: 1px solid var(--border); border-radius: 20px; background: var(--card); color: var(--foreground); box-shadow: var(--shadow-card); transform-origin: var(--radix-dropdown-menu-content-transform-origin); animation: profile-in 160ms ease-out; }
+.profile-menu-heading { display: grid; gap: 5px; padding: 12px; overflow-wrap: anywhere; font: var(--type-caption); color: var(--muted-foreground); }
+.profile-menu-heading strong { font: var(--type-heading); color: var(--foreground); }
+.profile-brand { font: var(--type-overline); letter-spacing: .08em; color: var(--color-accent-ink); }
+.profile-menu-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; font: var(--type-label); cursor: pointer; outline: none; }
+.profile-menu-item[data-highlighted] { background: var(--color-accent); color: var(--color-accent-ink); }
+.profile-menu-separator { height: 1px; margin: 6px 8px; background: var(--border); }
+@keyframes profile-in { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .profile-menu { animation: none; } .profile-chevron { transition: none; } }
