@@ -8,7 +8,7 @@
     "test:auth": "node scripts/test-auth.mjs",
     "db:prepare": "node scripts/prepare-sql.mjs",
     "dev": "node scripts/dev.mjs",
-    "build": "npm run build:ui && npm run build:agent",
+    "build": "npm run build:ui && npm run build:agent && node scripts/package-frontend.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "typecheck": "tsc -b",
