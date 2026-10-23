@@ -41,3 +41,7 @@ Local startup runs Vite on 5173 and Eve on 2002. Production must serve the UI an
 ## Model and reasoning
 
 The agent calls GPT-6 Luna directly through `eve/models/openai` using server-only OPENAI_API_KEY. The composer sends x-cancer-reasoning on each turn. The authenticated channel allowlists that preference, adds it to the current caller attributes, and the step model resolver passes it as OpenAI reasoningEffort. Auto and unknown values resolve to medium. Supported explicit values: none, low, medium, high, xhigh, max. Provider-native options preserve max, which is outside Eve 0.80.1 generic reasoning enum.
+
+## Account profiles
+
+Supabase user metadata stores display_name and avatar_url. POST /api/profile/avatar validates the Supabase session, limits uploads to 3 MB and 25 million pixels, and re-encodes images as 256px WebP without EXIF. The server uploads to the existing public Vercel Blob store using BLOB_READ_WRITE_TOKEN, under cancer/avatars/<authenticated-user-id>/<random-id>.webp. The secret never reaches the browser. Profile images have public URLs; workspace and chat permissions are unchanged.

@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { LockKeyhole, UserRound } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { ProfileEditor } from './ProfileEditor';
 import { Button } from './ui/Button';
 import { Dialog } from './ui/Dialog';
-export function AccountDialog({ email, onClose }: { email?: string; onClose: () => void }) {
+export function AccountDialog({ email, displayName, avatarUrl, onClose }: { displayName?: string; avatarUrl?: string; email?: string; onClose: () => void }) {
   const [current, setCurrent] = useState('');
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -45,11 +46,12 @@ export function AccountDialog({ email, onClose }: { email?: string; onClose: () 
   }
   return <Dialog open onClose={onClose} title="Mitt konto" description="Din profil och dina inloggningsuppgifter.">
     <div className="account-identity"><span className="avatar"><UserRound size={20} /></span><div><strong>E-postadress</strong><p>{email}</p></div></div>
+    <ProfileEditor displayName={displayName} avatarUrl={avatarUrl} />
     <form className="account-form" onSubmit={event => void changePassword(event)}>
       <h3><LockKeyhole size={18} />Byt lösenord</h3>
       <p className="account-help" id="password-help">Använd minst 8 tecken och ett unikt lösenord.</p>
       <label htmlFor="current-password">Nuvarande lösenord</label>
-      <input id="current-password" className="ui-field" type="password" autoComplete="current-password" required value={current} onChange={e => setCurrent(e.target.value)} disabled={busy} data-autofocus />
+      <input id="current-password" className="ui-field" type="password" autoComplete="current-password" required value={current} onChange={e => setCurrent(e.target.value)} disabled={busy} />
       <label htmlFor="new-password">Nytt lösenord</label>
       <input id="new-password" className="ui-field" type="password" autoComplete="new-password" aria-describedby="password-help" minLength={8} required value={password} onChange={e => setPassword(e.target.value)} disabled={busy} />
       <label htmlFor="confirm-password">Bekräfta nytt lösenord</label>

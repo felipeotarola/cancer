@@ -1,3 +1,5 @@
+import { del } from '@vercel/blob';
+import sharp from 'sharp';
 import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { chromium, expect } from '@playwright/test';
@@ -7,7 +9,7 @@ const opts={auth:{persistSession:false,autoRefreshToken:false}};
 const admin=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SECRET_KEY,opts);
 const email=`cancer-profile-${randomUUID()}@example.invalid`;
 const oldPassword=`Qa!${randomUUID()}`, nextPassword=`Qa!${randomUUID()}`;
-let id, browser;
+let id, browser, uploaded;
 try {
  const created=await admin.auth.admin.createUser({email,password:oldPassword,email_confirm:true}); assert.equal(created.error,null); id=created.data.user.id;
  browser=await chromium.launch({channel:'chrome',headless:true}); const page=await browser.newPage({viewport:{width:1440,height:1000}});
@@ -19,6 +21,28 @@ try {
  await page.keyboard.press('Escape'); await expect(profile).toBeFocused();
  await profile.click(); await page.getByRole('menuitem',{name:'Mitt konto'}).click();
  const dialog=page.getByRole('dialog',{name:'Mitt konto'}); await expect(dialog).toBeVisible();
+
+ await page.getByLabel('Visningsnamn',{exact:true}).fill('Testforskare');
+ await page.getByRole('button',{name:'Spara profil',exact:true}).click();
+ await expect(dialog.getByText('Profilen har sparats.',{exact:true})).toBeVisible();
+ const testClient=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_PUBLISHABLE_KEY,opts);
+ const login=await testClient.auth.signInWithPassword({email,password:oldPassword}); assert.equal(login.error,null);
+ const endpoint=(process.env.CANCER_TEST_BASE || 'http://127.0.0.1:5173')+'/api/profile/avatar';
+ assert.ok([401,403].includes((await fetch(endpoint,{method:'POST',body:'x'})).status));
+ const headers={authorization:'Bearer '+login.data.session.access_token,'content-type':'image/png'};
+ assert.equal((await fetch(endpoint,{method:'POST',headers,body:'not an image'})).status,400);
+ assert.equal((await fetch(endpoint,{method:'POST',headers:{...headers,'content-type':'image/svg+xml'},body:'<svg />'})).status,415);
+ const pixels=await sharp({create:{width:48,height:48,channels:3,background:'#748369'}}).png().toBuffer();
+ await page.locator('#profile-photo').setInputFiles({name:'avatar.png',mimeType:'image/png',buffer:pixels});
+ await expect(dialog.getByText('Profilbilden har sparats.',{exact:true})).toBeVisible({timeout:30000});
+ const saved=await admin.auth.admin.getUserById(id); assert.equal(saved.data.user.user_metadata.display_name,'Testforskare');
+ uploaded=saved.data.user.user_metadata.avatar_url; assert.ok(uploaded.includes('/cancer/avatars/'+id+'/'));
+ const downloaded=await fetch(uploaded); assert.equal(downloaded.status,200);
+ const metadata=await sharp(Buffer.from(await downloaded.arrayBuffer())).metadata(); assert.equal(metadata.width,256); assert.equal(metadata.height,256); assert.equal(metadata.format,'webp');
+ await page.reload(); await page.getByRole('button',{name:'Öppna profilmeny',exact:true}).click();
+ await page.getByRole('menuitem',{name:'Mitt konto'}).click();
+ await expect(page.getByLabel('Visningsnamn',{exact:true})).toHaveValue('Testforskare');
+ await expect(dialog.getByAltText('Din profilbild')).toBeVisible();
  await page.getByLabel('Nuvarande lösenord',{exact:true}).fill(oldPassword);
  await page.getByLabel('Nytt lösenord',{exact:true}).fill(nextPassword);
  await page.getByLabel('Bekräfta nytt lösenord',{exact:true}).fill('Different!password123');
@@ -31,6 +55,7 @@ try {
  assert.ok((await client.auth.signInWithPassword({email,password:oldPassword})).error);
  assert.equal((await client.auth.signInWithPassword({email,password:nextPassword})).error,null);
  await page.getByRole('button',{name:'Stäng dialog'}).click();
+ await expect(profile).toContainText('Testforskare');
  await page.setViewportSize({width:390,height:844});
  await page.getByRole('button',{name:'Öppna navigation',exact:true}).click();
  await page.getByRole('button',{name:'Öppna profilmeny',exact:true}).click();
@@ -42,5 +67,5 @@ try {
  await page.getByRole('button',{name:'Öppna profilmeny',exact:true}).click();
  await page.getByRole('menuitem',{name:'Logga ut'}).click();
  await expect(page.getByRole('heading',{name:'Välkommen tillbaka'})).toBeVisible();
- console.log('PASS desktop/mobile profile menu, Escape focus, account dialog, mismatch validation, real password update, old-password rejection, new-password login and logout');
-} finally {await browser?.close();if(id){const r=await admin.auth.admin.deleteUser(id);assert.equal(r.error,null);}console.log('Removed disposable profile test identity');}
+ console.log('PASS Blob avatar upload, normalized image, display name persistence, desktop/mobile profile menu, Escape focus, account dialog, mismatch validation, real password update, old-password rejection, new-password login and logout');
+} finally {await browser?.close();if(uploaded) await del(uploaded);if(id){const r=await admin.auth.admin.deleteUser(id);assert.equal(r.error,null);}console.log('Removed disposable profile test identity');}

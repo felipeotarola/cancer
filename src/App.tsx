@@ -34,13 +34,13 @@ import { loadThreads, saveThreads, newThread, type Thread } from "./lib/chat";
 import "./App.css";
 const DesignSystem = lazy(() => import("./components/DesignSystem"));
 
-export default function App({ initialThreads, createRemoteChat, onCreateWorkspace, onShareWorkspace, onAccount, workspaces, workspaceId, onWorkspaceChange, accountEmail, onLogout, workspaceName = 'OpenCancer' }: {
+export default function App({ initialThreads, createRemoteChat, onCreateWorkspace, onShareWorkspace, onAccount, workspaces, workspaceId, onWorkspaceChange, accountEmail, displayName, avatarUrl, onLogout, workspaceName = 'OpenCancer' }: {
   onAccount?: () => void;
   onShareWorkspace?: () => void;
   workspaces?: { id: string; name: string }[];
   workspaceId?: string;
   onWorkspaceChange?: (id: string) => void;
-  accountEmail?: string;
+  accountEmail?: string; displayName?: string; avatarUrl?: string;
   onLogout?: () => void;
   initialThreads?: Thread[];
   createRemoteChat?: () => Promise<Thread>;
@@ -194,7 +194,7 @@ export default function App({ initialThreads, createRemoteChat, onCreateWorkspac
     </header>
   );
 
-  const account = <ProfileMenu email={accountEmail} dark={dark} onTheme={() => setDark(!dark)} onLogout={onLogout} onAccount={onAccount ? () => { setMobileNav(false); onAccount(); } : undefined} />;
+  const account = <ProfileMenu displayName={displayName} avatarUrl={avatarUrl} email={accountEmail} dark={dark} onTheme={() => setDark(!dark)} onLogout={onLogout} onAccount={onAccount ? () => { setMobileNav(false); onAccount(); } : undefined} />;
   return (
     <div className={`app-shell ${collapsed ? "nav-collapsed" : ""}`}>
       <aside

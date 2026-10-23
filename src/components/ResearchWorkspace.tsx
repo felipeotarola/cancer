@@ -56,9 +56,9 @@ export function ResearchWorkspace({ user }: { user: User }) {
   return <div className="research-root">
     {error && <div className="research-error" role="alert">{error} <Button size="sm" onClick={() => setRetry(n => n + 1)}>Försök igen</Button></div>}
     {loaded && loaded.workspaceId === workspaceId ?
-      <App onAccount={() => setAccountOpen(true)} onShareWorkspace={workspace?.owner_id === user.id ? () => setSharing(true) : undefined} workspaces={workspaces} workspaceId={workspaceId} onWorkspaceChange={id => { setError(''); setWorkspaceId(id); }} accountEmail={user.email} onLogout={() => void logout()} onCreateWorkspace={() => setDialog(true)} key={workspaceId} initialThreads={loaded.threads} createRemoteChat={createChat} workspaceName={workspace?.name} /> :
+      <App onAccount={() => setAccountOpen(true)} onShareWorkspace={workspace?.owner_id === user.id ? () => setSharing(true) : undefined} workspaces={workspaces} workspaceId={workspaceId} onWorkspaceChange={id => { setError(''); setWorkspaceId(id); }} displayName={user.user_metadata.display_name} avatarUrl={user.user_metadata.avatar_url} accountEmail={user.email} onLogout={() => void logout()} onCreateWorkspace={() => setDialog(true)} key={workspaceId} initialThreads={loaded.threads} createRemoteChat={createChat} workspaceName={workspace?.name} /> :
       <p className="page-loading" role="status">{error ? 'Workspacet kunde inte laddas.' : 'Laddar dina workspaces…'}</p>}
-    {accountOpen && <AccountDialog email={user.email} onClose={() => setAccountOpen(false)} />}
+    {accountOpen && <AccountDialog displayName={user.user_metadata.display_name} avatarUrl={user.user_metadata.avatar_url} email={user.email} onClose={() => setAccountOpen(false)} />}
     {sharing && workspace && <ShareWorkspace key={workspace.id} workspaceId={workspace.id} name={workspace.name} onClose={() => setSharing(false)} />}
     <Dialog open={dialog} onClose={() => setDialog(false)} title="Nytt workspace" description="Samla chattar kring ett forskningsområde.">
       <form onSubmit={event => { event.preventDefault(); void createWorkspace(); }}>

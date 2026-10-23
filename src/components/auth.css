@@ -31,3 +31,15 @@
 .account-form > button:last-child { margin-top: 8px; }
 .account-error { color: var(--color-danger); margin: 4px 0; }
 .account-notice { color: var(--color-accent-ink); margin: 4px 0; }
+
+.avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.profile-editor { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+.profile-photo-row { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.profile-photo { width: 64px; height: 64px; flex: 0 0 64px; border-radius: 50%; overflow: hidden; }
+.profile-upload { display: block; font-weight: 600; margin-bottom: 8px; }
+.profile-photo-row input { max-width: 100%; width: 220px; font-size: 12px; }
+.profile-photo-row > div { min-width: 0; }
+.profile-file-control { position: relative; width: fit-content; }
+.profile-upload { display: inline-flex; padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--color-surface); cursor: pointer; font-size: 13px; margin-bottom: 0; }
+.profile-file-control input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.profile-file-control:focus-within { outline: 2px solid var(--color-ink); outline-offset: 3px; border-radius: 999px; }
