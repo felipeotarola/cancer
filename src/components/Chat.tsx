@@ -21,9 +21,7 @@ import { useAgent } from "../lib/agent/useAgent";
 export function Chat({
   thread,
   onChange,
-  onCreateWorkspace,
 }: {
-  onCreateWorkspace?: () => void;
   thread: Thread;
   onChange: (thread: Thread) => void;
 }) {
@@ -98,15 +96,7 @@ export function Chat({
                 Planera en översikt<span>↗</span>
               </Button>
             </div>
-            {onCreateWorkspace && (
-              <div className="welcome-workspace">
-                <p>Ett nytt forskningsområde?</p>
-                <Button variant="secondary" onClick={onCreateWorkspace}>
-                  <Plus size={16} />Skapa nytt workspace
-                </Button>
-                <small>Samla områdets chattar i en egen arbetsyta.</small>
-              </div>
-            )}
+
           </div>
         ) : (
           <div className="message-list">

@@ -3,7 +3,7 @@ import { api } from '../lib/supabase';
 import type { Thread } from '../lib/chat';
 import { Chat } from './Chat';
 import { Button } from './ui/Button';
-export function LiveChat({ thread, onChange, onCreateWorkspace }: { onCreateWorkspace?: () => void; thread: Thread; onChange: (thread: Thread) => void }) {
+export function LiveChat({ thread, onChange }: { thread: Thread; onChange: (thread: Thread) => void }) {
   const [sessionId, setSessionId] = useState(thread.sessionId);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
@@ -17,5 +17,5 @@ export function LiveChat({ thread, onChange, onCreateWorkspace }: { onCreateWork
   }, [thread.id, sessionId, retry]);
   if (error) return <div className="page-loading" role="alert">{error}<Button onClick={() => { setError(''); setRetry(n => n + 1); }}>Försök igen</Button></div>;
   if (!sessionId) return <p className="page-loading" role="status">Öppnar chatten…</p>;
-  return <Chat key={sessionId} thread={{ ...thread, sessionId }} onChange={onChange} onCreateWorkspace={onCreateWorkspace} />;
+  return <Chat key={sessionId} thread={{ ...thread, sessionId }} onChange={onChange} />;
 }

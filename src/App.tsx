@@ -366,8 +366,8 @@ export default function App({ initialThreads, createRemoteChat, onCreateWorkspac
               </Button>
             </div>
             {active.id === 'empty' ? <div className="page-loading"><h1>Välkommen till {workspaceName}</h1><p>Starta ett samtal för att börja samla din forskning.</p><Button variant="primary" disabled={creatingChat} onClick={() => void createChat()}>{creatingChat ? 'Skapar…' : 'Starta chatt'}</Button>{onCreateWorkspace && <Button onClick={onCreateWorkspace}>Skapa nytt workspace</Button>}</div> : createRemoteChat ?
-              <LiveChat onCreateWorkspace={onCreateWorkspace} key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} /> :
-              <Chat onCreateWorkspace={onCreateWorkspace} key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} />}
+              <LiveChat key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} /> :
+              <Chat key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} />}
           </section>
           <div
             className="divider"
