@@ -1,6 +1,8 @@
 import { routeAuth } from 'eve/channels/auth';
 import { put, del } from '@vercel/blob';
-import sharp from 'sharp';
+import { createRequire } from 'node:module';
+import type sharpType from 'sharp';
+const runtimeRequire = createRequire(import.meta.url);
 import { appAuth } from '../auth.ts';
 import { serverDatabase } from '../db.ts';
 
@@ -22,6 +24,7 @@ export async function avatarResponse(request: Request): Promise<Response> {
   }
   let image: Buffer;
   try {
+    const sharp = runtimeRequire('sharp') as typeof sharpType;
     image = await sharp(Buffer.concat(chunks), { limitInputPixels: 25_000_000 }).rotate().resize(256, 256, { fit: 'cover' }).webp({ quality: 85 }).toBuffer();
   } catch { return fail('Bilden kunde inte läsas. Välj en annan bild.', 400); }
   let uploaded: string | undefined;
