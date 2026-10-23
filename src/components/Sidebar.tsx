@@ -1,6 +1,7 @@
 import { Button } from "./ui/Button";
 import { useState } from "react";
 import {
+  Trash2,
   LayoutGrid,
   Bot,
   Plug,
@@ -30,6 +31,7 @@ type Props = {
   threads: Thread[];
   activeId: string;
   view: string;
+  onDelete: (thread: Thread) => void;
   onSelect: (id: string) => void;
   onNew: () => void;
   onView: (view: string) => void;
@@ -41,7 +43,7 @@ export function Sidebar({
   threads,
   activeId,
   view,
-  onSelect,
+  onSelect, onDelete,
   onNew,
   onView,
 }: Props) {
@@ -124,15 +126,14 @@ export function Sidebar({
         )}
         <div className="thread-list">
           {filtered.map((t) => (
-            <Button
-              key={t.id}
+            <div key={t.id} className="thread-row"><Button
               className={`nav-link thread ${activeId === t.id ? "active" : ""}`}
               aria-current={activeId === t.id ? "page" : undefined}
               onClick={() => onSelect(t.id)}
             >
               <MessageSquare />
               <span>{t.title}</span>
-            </Button>
+            </Button><Button shape="icon" size="sm" className="thread-delete" aria-label={`Ta bort chatten ${t.title}`} onClick={() => onDelete(t)}><Trash2 size={15} /></Button></div>
           ))}
           {query && !filtered.length && (
             <p className="no-results">Inga chattar hittades.</p>

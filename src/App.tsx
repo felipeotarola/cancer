@@ -1,3 +1,4 @@
+import { Dialog } from './components/ui/Dialog';
 import { Button } from "./components/ui/Button";
 import {
   lazy,
@@ -34,7 +35,7 @@ import { loadThreads, saveThreads, newThread, type Thread } from "./lib/chat";
 import "./App.css";
 const DesignSystem = lazy(() => import("./components/DesignSystem"));
 
-export default function App({ initialThreads, createRemoteChat, onCreateWorkspace, onShareWorkspace, onAccount, workspaces, workspaceId, onWorkspaceChange, accountEmail, displayName, avatarUrl, onLogout, workspaceName = 'OpenCancer' }: {
+export default function App({ initialThreads, createRemoteChat, deleteRemoteChat, onCreateWorkspace, onShareWorkspace, onAccount, workspaces, workspaceId, onWorkspaceChange, accountEmail, displayName, avatarUrl, onLogout, workspaceName = 'OpenCancer' }: {
   onAccount?: () => void;
   onShareWorkspace?: () => void;
   workspaces?: { id: string; name: string }[];
@@ -43,10 +44,27 @@ export default function App({ initialThreads, createRemoteChat, onCreateWorkspac
   accountEmail?: string; displayName?: string; avatarUrl?: string;
   onLogout?: () => void;
   initialThreads?: Thread[];
+  deleteRemoteChat?: (id: string) => Promise<void>;
   createRemoteChat?: () => Promise<Thread>;
   workspaceName?: string;
   onCreateWorkspace?: () => void;
 } = {}) {
+  const [deleteTarget, setDeleteTarget] = useState<Thread | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  async function deleteChat() {
+    if (!deleteTarget) return;
+    setDeleting(true); setDeleteError('');
+    try {
+      await deleteRemoteChat?.(deleteTarget.id);
+      const remaining = threads.filter(t => t.id !== deleteTarget.id);
+      const next = remaining.length ? remaining : [{ id: 'empty', title: 'Ny chatt', messages: [] }];
+      setThreads(next);
+      if (activeId === deleteTarget.id) setActiveId(next[0].id);
+      setDeleteTarget(null);
+    } catch (e) { setDeleteError(e instanceof Error ? e.message : 'Kunde inte ta bort chatten.'); }
+    finally { setDeleting(false); }
+  }
   const [threads, setThreads] = useState<Thread[]>(() => initialThreads?.length ? initialThreads : initialThreads ? [{ id: 'empty', title: 'Ny chatt', messages: [] }] : loadThreads());
   const [chatError, setChatError] = useState('');
   const [creatingChat, setCreatingChat] = useState(false);
@@ -158,6 +176,7 @@ export default function App({ initialThreads, createRemoteChat, onCreateWorkspac
       creatingChat={creatingChat}
       activeId={active.id}
       view={view}
+      onDelete={thread => { setMobileNav(false); setDeleteError(''); setDeleteTarget(thread); }}
       onSelect={selectChat}
       onNew={createChat}
       onView={openView}
@@ -197,6 +216,10 @@ export default function App({ initialThreads, createRemoteChat, onCreateWorkspac
   const account = <ProfileMenu displayName={displayName} avatarUrl={avatarUrl} email={accountEmail} dark={dark} onTheme={() => setDark(!dark)} onLogout={onLogout} onAccount={onAccount ? () => { setMobileNav(false); onAccount(); } : undefined} />;
   return (
     <div className={`app-shell ${collapsed ? "nav-collapsed" : ""}`}>
+      <Dialog open={!!deleteTarget} onClose={() => { if (!deleting) setDeleteTarget(null); }} title="Ta bort chatt?" description={`”${deleteTarget?.title ?? ''}” och dess meddelanden tas bort permanent. Workspacet finns kvar.`}>
+        {deleteError && <p role="alert">{deleteError}</p>}
+        <div className="delete-chat-actions"><Button data-autofocus disabled={deleting} onClick={() => setDeleteTarget(null)}>Avbryt</Button><Button variant="primary" disabled={deleting} onClick={() => void deleteChat()}>{deleting ? 'Tar bort…' : 'Ta bort chatt'}</Button></div>
+      </Dialog>
       <aside
         ref={navigation}
         className="desktop-sidebar"

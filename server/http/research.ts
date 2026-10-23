@@ -44,6 +44,11 @@ export async function researchResponse(request: Request): Promise<Response> {
       return json(checked(await db.from('cancer_workspace_shares').select('id,email').eq('workspace_id', workspaceId).order('created_at')));
     }
     if (url.pathname === '/api/chats') {
+      if (request.method === 'DELETE') {
+        const id = uuid.parse(url.searchParams.get('id'));
+        const deleted = checked(await db.from('cancer_chats').delete().eq('id', id).eq('owner_id', auth.principalId).select('id'));
+        return deleted.length ? json({ ok: true }) : json({ error: 'Chatten saknas eller kan inte tas bort.' }, 404);
+      }
       if (request.method === 'POST') {
         const { workspaceId } = z.object({ workspaceId: uuid }).strict().parse(await request.json());
         const workspace = checked(await db.from('cancer_workspaces').select('id').eq('id', workspaceId));

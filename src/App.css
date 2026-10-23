@@ -1121,3 +1121,9 @@
 .profile-menu-separator { height: 1px; margin: 6px 8px; background: var(--border); }
 @keyframes profile-in { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .profile-menu { animation: none; } .profile-chevron { transition: none; } }
+
+.thread-row { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.thread-row .thread { flex: 1; min-width: 0; }
+.thread-delete { flex-shrink: 0; color: var(--muted-foreground); }
+.thread-delete:hover { color: var(--color-danger); }
+.delete-chat-actions { display: flex; justify-content: flex-end; gap: 10px; }

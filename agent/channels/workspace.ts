@@ -8,5 +8,5 @@ export default defineChannel({
   routes: [POST("/api/profile/avatar", avatarResponse), GET("/api/workspace", workspaceResponse), GET('/api/auth/config', configResponse),
     GET('/api/workspaces', researchResponse), POST('/api/workspaces', researchResponse),
     GET('/api/workspace-shares', researchResponse), POST('/api/workspace-shares', researchResponse), DELETE('/api/workspace-shares', researchResponse),
-    GET('/api/chats', researchResponse), POST('/api/chats', researchResponse)],
+    DELETE('/api/chats', researchResponse), GET('/api/chats', researchResponse), POST('/api/chats', researchResponse)],
 });
