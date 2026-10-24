@@ -171,7 +171,7 @@
   background: var(--color-surface);
 }
 .ui-select-trigger[data-state="open"] {
-  border-color: var(--color-accent-ink);
+  border-color: var(--color-ink);
   box-shadow: var(--focus-ring);
 }
 .ui-select-trigger[data-placeholder] {
@@ -255,7 +255,7 @@
   position: absolute;
   right: 12px;
   display: inline-flex;
-  color: var(--color-accent-ink);
+  color: var(--color-ink);
 }
 .ui-select-scroll {
   display: flex;

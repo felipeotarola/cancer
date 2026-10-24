@@ -1,11 +1,12 @@
 import { avatarResponse } from '../../server/http/avatar.ts';
+import { researchLibraryResponse } from '../../server/http/research-library.ts';
 import { defineChannel, GET, POST, DELETE } from "eve/channels";
 import { workspaceResponse } from "../../server/http/workspace.ts";
 import { configResponse, researchResponse } from "../../server/http/research.ts";
 
 // Thin HTTP transport. The application service is shared with agent tools.
 export default defineChannel({
-  routes: [POST("/api/profile/avatar", avatarResponse), GET("/api/workspace", workspaceResponse), GET('/api/auth/config', configResponse),
+  routes: [GET('/api/research-library', researchLibraryResponse), POST('/api/research-library', researchLibraryResponse), DELETE('/api/research-library', researchLibraryResponse), POST("/api/profile/avatar", avatarResponse), GET("/api/workspace", workspaceResponse), GET('/api/auth/config', configResponse),
     GET('/api/workspaces', researchResponse), POST('/api/workspaces', researchResponse),
     GET('/api/workspace-shares', researchResponse), POST('/api/workspace-shares', researchResponse), DELETE('/api/workspace-shares', researchResponse),
     DELETE('/api/chats', researchResponse), GET('/api/chats', researchResponse), POST('/api/chats', researchResponse)],

@@ -32,7 +32,19 @@ Eve workflow/events remain in its own store. Supabase stores the application cat
 
 Migration 003 adds cancer_workspace_shares. Owners grant and revoke access by email through /api/workspace-shares. Access requires a matching, verified email in auth.users. An address can be added before signup; no notification email is sent. Only owners manage shares. Members see the workspace and can create their own private chats; chat/session/message access stays private and also requires current workspace access. Revocation blocks new requests and server message writes. Browser-local files are not shared.
 
-## Files and hosting
+## Kalibrera research library
+
+The Forskning view consumes immutable, workspace-scoped imports of `research/tasks/*.json` from `x3r081/kalibrera`. The private repository is never bundled into frontend assets or copied into this repository. A manual server-side import (`npm run research:sync -- <workspace-uuid>`, Node 24) reads a single pinned main commit via GitHub, validates the bounded task records and inserts one snapshot into `cancer_research_snapshots`. It uses `KALIBRERA_GITHUB_TOKEN` or the operator's existing GitHub CLI authentication; no GitHub credential enters the browser or application runtime. Imports do not execute upstream code, acquire research datasets, claim tasks or write upstream. Re-importing the same commit is a no-op, including its original import timestamp.
+
+Run migration `004_research_library.sql` before the first import. Only explicitly imported workspaces can read the repository data. Members inherit access through the existing verified-email workspace membership. New workspaces start disconnected. `cancer_research_links` stores a task ID and original commit, so later imports do not silently change saved material. Members can add/remove shared references; deletion does not alter Kalibrera or private chats. RLS enforces membership and the existence of the task in the referenced snapshot even for direct Supabase calls. Snapshot writes are service-role-only.
+
+`/api/research-library` authenticates every GET/POST/DELETE, forwards the caller's bearer token for RLS, and returns no-store responses. Unknown workspaces and versions are rejected. The UI labels the import time and **last recorded event**, not official queue eligibility: it does not reimplement Kalibrera's lease or review rules. Until a stable upstream export exists, fresh assignment/eligibility must be checked in Kalibrera. Results/review artifacts link to their pinned repository paths and require GitHub repository access; file contents are not automatically ingested.
+
+Discuss with Luna creates a new private chat and a user-editable draft containing the task record, source commit, E0 label and explicit untrusted-source framing. Nothing is sent automatically. The existing Eve chat protocol carries the user-submitted draft; no analysis or write tools are enabled. Drafts are in-memory until submitted. A workspace reference is not a reservation or an official research result.
+
+Verification: `node --experimental-strip-types scripts/test-research-library.ts` exercises the live API, database RLS and UI using disposable accounts and synthetic tasks. Set `TEST_LIVE_MODEL=1` to additionally check a real Luna response. The test removes its own accounts and cascading records. No tests modify the partner repository.
+
+## Workspace files and hosting
 
 Workspace files are still browser-only. There are no analysis, upload or agent file-reading tools yet. Optional Eve tools/delegation remain disabled; Eve's upload policy rejects files.
 

@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  optimizeDeps: { include: ["@xyflow/react", "@radix-ui/react-select", "eve/react"] },
+  optimizeDeps: { include: ["@xyflow/react", "@radix-ui/react-select", "eve/react", "zod"] },
   server: {
     watch: { ignored: ["**/.eve/**", "**/.output/**"] },
     proxy: {

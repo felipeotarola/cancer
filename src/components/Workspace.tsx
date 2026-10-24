@@ -1,17 +1,21 @@
 import { Button } from "./ui/Button";
-import { House, PanelRightOpen, type LucideIcon } from "lucide-react";
+import { House, FlaskConical, PanelRightOpen, type LucideIcon } from "lucide-react";
 import { PanelRail } from "./PanelRail";
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { WorkspaceFiles } from "./WorkspaceFiles";
-const tabs: [LucideIcon, string][] = [[House, "Översikt"]];
+const ResearchLibrary = lazy(() => import('./ResearchLibrary').then(m => ({ default: m.ResearchLibrary })));
+const tabs: [LucideIcon, string][] = [[House, "Översikt"], [FlaskConical, "Forskning"]];
 export function Workspace({
   workspaceName = 'OpenCancer',
+  workspaceId, onDiscuss,
   view,
   onView,
   open,
   onToggle,
 }: {
   workspaceName?: string;
+  workspaceId?: string;
+  onDiscuss: (prompt: string) => Promise<void>;
   view: string;
   onView: (view: string) => void;
   open: boolean;
@@ -60,6 +64,7 @@ export function Workspace({
           </nav>
         </header>
         <div className="workspace-canvas" aria-label={`${view} – arbetsyta`}>
+          {view === 'Forskning' && <Suspense fallback={<p role="status">Laddar forskning…</p>}><ResearchLibrary workspaceId={workspaceId} onDiscuss={onDiscuss} /></Suspense>}
           <div hidden={view !== "Översikt"}>
             <WorkspaceFiles />
           </div>

@@ -6,6 +6,7 @@ import {
   Bot,
   Plug,
   House,
+  FlaskConical,
   CirclePlus,
   Search,
   MessageSquare,
@@ -19,7 +20,7 @@ const globalLinks: [LucideIcon, string][] = [
   [Bot, "Agenten"],
   [Plug, "Integrationer"],
 ];
-const workspaceLinks: [LucideIcon, string][] = [[House, "Översikt"]];
+const workspaceLinks: [LucideIcon, string][] = [[House, "Översikt"], [FlaskConical, "Forskning"]];
 type Props = {
   workspaces?: { id: string; name: string }[];
   workspaceId?: string;

@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "research:sync": "node --experimental-strip-types scripts/sync-kalibrera.ts",
     "db:migrate": "node scripts/migrate.mjs",
     "test:auth": "node scripts/test-auth.mjs",
     "db:prepare": "node scripts/prepare-sql.mjs",

@@ -20,13 +20,15 @@ import { Select } from "./ui/Select";
 import { useAgent } from "../lib/agent/useAgent";
 export function Chat({
   thread, previousMessages, onReconnect, reconnecting,
+  initialDraft, onDraftSent,
   onChange,
 }: {
   previousMessages?: Message[]; onReconnect?: () => void; reconnecting?: boolean;
+  initialDraft?: string; onDraftSent?: () => void;
   thread: Thread;
   onChange: (thread: Thread) => void;
 }) {
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initialDraft ?? '');
   const agent = useAgent(thread, onChange, previousMessages);
   const { pending } = agent;
   const [style, setStyle] = useState("Auto");
@@ -37,6 +39,7 @@ export function Chat({
   const bottom = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const file = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (initialDraft) input.current?.focus(); }, [initialDraft]);
   useEffect(
     () => () => {
       if (copyTimer.current) clearTimeout(copyTimer.current);
@@ -50,6 +53,7 @@ export function Chat({
     if (!text.trim() || pending || agent.blocked) return;
     agent.send(text.trim() + (attachments.length ? `\n\nBifogade filnamn (innehållet är inte uppladdat): ${attachments.join(", ")}` : ""), style);
     setDraft("");
+    onDraftSent?.();
     setAttachments([]);
     if (input.current) input.current.style.height = "auto";
   }

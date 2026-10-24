@@ -14,7 +14,7 @@ test("design system uses real components, working dialog, themes and semantic ty
     await page
       .locator(".ds-hero h1")
       .evaluate((el) => getComputedStyle(el).fontFamily),
-  ).toContain("Manrope");
+  ).toContain("Inter");
   await expect(
     page.getByRole("button", { name: "Öppna navigation", exact: true }),
   ).toHaveCount(0);

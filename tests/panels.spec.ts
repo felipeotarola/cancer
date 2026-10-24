@@ -1,5 +1,36 @@
 import { test, expect } from "@playwright/test";
 
+test("chat collapses into a rail without losing drafts and remains accessible after resizing", async ({ page }) => {
+  await page.goto("/");
+  const draft = page.getByRole("textbox", { name: "Ditt meddelande" });
+  await draft.fill("Min forskningsfråga, ännu inte skickad");
+  const before = await page.locator(".workspace-pane").boundingBox();
+  await page.getByRole("button", { name: "Fäll ihop chatten", exact: true }).click();
+  const reopen = page.getByRole("button", { name: "Öppna chatten", exact: true });
+  await expect(reopen).toBeFocused();
+  await expect(page.locator(".chat-column")).toHaveAttribute("inert", "");
+  await expect(draft).toHaveCount(0);
+  await expect.poll(async () => (await page.locator(".workspace-pane").boundingBox())!.width).toBeGreaterThan(before!.width + 200);
+  await page.screenshot({ path: "test-results/chat-collapsed.png", animations: "disabled" });
+  await page.keyboard.press("Enter");
+  await expect(draft).toBeFocused();
+  await expect(draft).toHaveValue("Min forskningsfråga, ännu inte skickad");
+  await page.getByRole("button", { name: "Fäll ihop chatten", exact: true }).click();
+  await page.getByRole("separator").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(draft).toBeFocused();
+  await page.getByRole("button", { name: "Fäll ihop chatten", exact: true }).click();
+  await page.locator(".desktop-sidebar .thread.active").click();
+  await expect(draft).toHaveValue("Min forskningsfråga, ännu inte skickad");
+  await page.getByRole("button", { name: "Fäll ihop chatten", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(reopen).toHaveCount(0);
+  await page.getByRole("button", { name: "Chatt", exact: true }).click();
+  await expect(draft).toBeVisible();
+  await expect(draft).toHaveValue("Min forskningsfråga, ännu inte skickad");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("panels animate into rails, preserve chat drafts and restore keyboard focus", async ({
   page,
 }) => {

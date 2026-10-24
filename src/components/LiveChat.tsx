@@ -3,7 +3,7 @@ import { api } from '../lib/supabase';
 import type { Thread } from '../lib/chat';
 import { Chat } from './Chat';
 import { Button } from './ui/Button';
-export function LiveChat({ thread, onChange }: { thread: Thread; onChange: (thread: Thread) => void }) {
+export function LiveChat({ thread, onChange, initialDraft, onDraftSent }: { thread: Thread; onChange: (thread: Thread) => void; initialDraft?: string; onDraftSent?: () => void }) {
   const [sessionId, setSessionId] = useState(thread.sessionId);
   const [history, setHistory] = useState<Thread['messages']>([]);
   const [reconnecting, setReconnecting] = useState(false);
@@ -30,5 +30,5 @@ export function LiveChat({ thread, onChange }: { thread: Thread; onChange: (thre
   }
   if (error) return <div className="page-loading" role="alert">{error}<Button onClick={() => { setError(''); setRetry(n => n + 1); }}>Försök igen</Button></div>;
   if (!sessionId) return <p className="page-loading" role="status">Öppnar chatten…</p>;
-  return <Chat previousMessages={history} onReconnect={() => void reconnect()} reconnecting={reconnecting} key={sessionId} thread={{ ...thread, sessionId }} onChange={onChange} />;
+  return <Chat initialDraft={initialDraft} onDraftSent={onDraftSent} previousMessages={history} onReconnect={() => void reconnect()} reconnecting={reconnecting} key={sessionId} thread={{ ...thread, sessionId }} onChange={onChange} />;
 }

@@ -29,15 +29,15 @@ const typeStyles = [
     "Display",
     "En tanke kan bli något stort.",
     "type-display",
-    "Manrope · 32–44 / 1.14 · 550",
+    "Inter · 32–44 / 1.14 · 600",
   ],
   [
     "Sidtitel",
     "Plats för det som kommer härnäst.",
     "type-title",
-    "Manrope · 28–34 / 1.2 · 550",
+    "Inter · 28–34 / 1.2 · 600",
   ],
-  ["Rubrik", "Allt har sin plats.", "type-heading", "Manrope · 18 / 1.4 · 600"],
+  ["Rubrik", "Allt har sin plats.", "type-heading", "Inter · 18 / 1.4 · 600"],
   [
     "Brödtext",
     "Små steg, tydliga tankar. En arbetsyta som ger innehållet plats och låter dig fokusera.",
@@ -99,7 +99,7 @@ export default function DesignSystem({
               Prova komponenterna
               <ArrowUpRight size={16} />
             </Button>
-            <span className="ds-version">Stone & Sage · v0.2</span>
+            <span className="ds-version">Neutral Monochrome · v0.3</span>
           </div>
         </div>
         <div className="ds-orbit" aria-hidden="true">
@@ -312,7 +312,7 @@ export default function DesignSystem({
           <SpecimenTitle
             number="Aa"
             title="Typografi med en uppgift"
-            subtitle="Manrope ger rubrikerna karaktär. Inter håller gränssnitt och längre texter lättlästa."
+            subtitle="Inter ger rubriker, gränssnitt och längre texter ett gemensamt uttryck med tydlig kontrast."
           />
           <div className="ds-type-list">
             {typeStyles.map(([role, sample, className, metrics]) => (

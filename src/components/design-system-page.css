@@ -78,7 +78,7 @@
   top: 113px;
   transform: rotate(8deg);
   background: var(--color-accent);
-  color: var(--color-accent-ink);
+  color: var(--color-ink);
 }
 .orbit-dot {
   position: absolute;
@@ -189,7 +189,7 @@
   height: 42px;
   border-radius: var(--radius-control);
   background: var(--color-accent);
-  color: var(--color-accent-ink);
+  color: var(--color-ink);
   margin-right: 12px;
 }
 .ds-workspace-preview > h3 {

@@ -17,7 +17,7 @@ test("workspace reaches the top; agent and integrations use the full main area",
     page
       .getByRole("navigation", { name: "Workspace-vyer" })
       .getByRole("button"),
-  ).toHaveCount(1);
+  ).toHaveCount(2);
   for (const name of ["Testning", "Material", "Vault"]) {
     await expect(page.getByRole("button", { name, exact: true })).toHaveCount(
       0,

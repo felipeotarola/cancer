@@ -13,6 +13,7 @@ import {
   PanelLeftClose,
   PanelRight,
   Share2,
+  MessageSquare,
   Menu,
   Moon,
   Sun,
@@ -21,6 +22,7 @@ import {
   Bot,
   Plug,
   House,
+  FlaskConical,
   CirclePlus,
   SwatchBook,
 } from "lucide-react";
@@ -68,11 +70,14 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
   const [threads, setThreads] = useState<Thread[]>(() => initialThreads?.length ? initialThreads : initialThreads ? [{ id: 'empty', title: 'Ny chatt', messages: [] }] : loadThreads());
   const [chatError, setChatError] = useState('');
   const [creatingChat, setCreatingChat] = useState(false);
+  const [researchDrafts, setResearchDrafts] = useState<Record<string, string>>({});
   const [activeId, setActiveId] = useState(() => threads[0].id);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [pane, setPane] = useState("chat");
   const [workspaceOpen, setWorkspaceOpen] = useState(true);
+  const [chatCollapsed, setChatCollapsed] = useState(false);
+  const chatReopen = useRef<HTMLButtonElement>(null);
   const [view, setView] = useState(() =>
     new URLSearchParams(window.location.search).get("view") === "design-system"
       ? "Designsystem"
@@ -98,6 +103,24 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
   const active = threads.find((t) => t.id === activeId) ?? threads[0];
   const standalone =
     view === "Agenten" || view === "Integrationer" || view === "Designsystem";
+
+  useEffect(() => {
+    if (chatCollapsed && !standalone) chatReopen.current?.focus();
+  }, [chatCollapsed, standalone]);
+  useEffect(() => {
+    const mobile = window.matchMedia("(max-width: 1023px)");
+    const restoreMobileChat = () => {
+      if (mobile.matches) setChatCollapsed(false);
+    };
+    mobile.addEventListener("change", restoreMobileChat);
+    return () => mobile.removeEventListener("change", restoreMobileChat);
+  }, []);
+
+  function reopenChat() {
+    setChatCollapsed(false);
+    setPane("chat");
+    requestAnimationFrame(() => split.current?.querySelector<HTMLTextAreaElement>("#message")?.focus());
+  }
 
   useEffect(() => {
     if (!createRemoteChat) saveThreads(threads);
@@ -131,6 +154,7 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
   }, [collapsed]);
 
   function selectChat(id: string) {
+    setChatCollapsed(false);
     window.history.replaceState(null, "", window.location.pathname);
     setActiveId(id);
     setView("Översikt");
@@ -160,7 +184,17 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
     setWorkspaceOpen(true);
     setMobileNav(false);
   }
+  async function discussResearch(prompt: string) {
+    const thread = createRemoteChat ? await createRemoteChat() : newThread();
+    setResearchDrafts(prev => ({ ...prev, [thread.id]: prompt }));
+    setThreads(prev => [thread, ...prev.filter(t => t.id !== 'empty')]);
+    setActiveId(thread.id); setChatCollapsed(false); setPane('chat'); setMobileNav(false);
+  }
+  function clearResearchDraft() {
+    setResearchDrafts(prev => { const next = { ...prev }; delete next[active.id]; return next; });
+  }
   function toggleWorkspace() {
+    setChatCollapsed(false);
     setWorkspaceOpen(!workspaceOpen);
     setPane(workspaceOpen ? "chat" : "workspace");
   }
@@ -197,6 +231,11 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
         <span>{standalone ? view : active.title}</span>
       </div>
       <div className="topbar-actions">
+        {!standalone && workspaceOpen && (
+          <Button shape="icon" className="icon-button collapse-chat-button" aria-label="Fäll ihop chatten" title="Fäll ihop chatten" aria-expanded={!chatCollapsed} aria-controls="conversation-panel" onClick={() => { setChatCollapsed(true); setPane("workspace"); }}>
+            <PanelLeftClose />
+          </Button>
+        )}
         {onShareWorkspace && <Button shape="icon" className="icon-button" aria-label="Dela workspace" title="Dela workspace" onClick={onShareWorkspace}><Share2 size={18} /></Button>}
         {!standalone && (
           <Button
@@ -257,6 +296,7 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
             icon={PanelLeftOpen}
             onToggle={() => setCollapsed(false)}
             items={[
+              { label: 'Forskning', icon: FlaskConical, onClick: () => openView('Forskning'), active: view === 'Forskning' },
               { label: "Ny chatt", icon: CirclePlus, onClick: createChat },
               {
                 label: "Alla workspaces",
@@ -358,7 +398,7 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
         )}
         <div
           hidden={standalone}
-          className={`split-layout ${workspaceOpen ? "" : "workspace-hidden"} mobile-${pane}`}
+          className={`split-layout ${workspaceOpen ? "" : "workspace-hidden"} ${chatCollapsed ? "chat-collapsed" : ""} mobile-${pane}`}
           ref={split}
           style={
             {
@@ -369,7 +409,7 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
             } as CSSProperties
           }
         >
-          <section className="chat-column" aria-label="Samtalsyta">
+          <section id="conversation-panel" className="chat-column" aria-label="Samtalsyta" inert={chatCollapsed} aria-hidden={chatCollapsed || undefined}>
             {header}
             <div className="mobile-tabs" role="group" aria-label="Panel">
               <Button
@@ -389,19 +429,26 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
               </Button>
             </div>
             {active.id === 'empty' ? <div className="page-loading"><h1>Välkommen till {workspaceName}</h1><p>Starta ett samtal för att börja samla din forskning.</p><Button variant="primary" disabled={creatingChat} onClick={() => void createChat()}>{creatingChat ? 'Skapar…' : 'Starta chatt'}</Button>{onCreateWorkspace && <Button onClick={onCreateWorkspace}>Skapa nytt workspace</Button>}</div> : createRemoteChat ?
-              <LiveChat key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} /> :
-              <Chat key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} />}
+              <LiveChat initialDraft={researchDrafts[active.id]} onDraftSent={clearResearchDraft} key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} /> :
+              <Chat initialDraft={researchDrafts[active.id]} onDraftSent={clearResearchDraft} key={active.id} thread={active} onChange={updated => setThreads(prev => prev.map(t => t.id === updated.id ? updated : t))} />}
           </section>
+          {chatCollapsed && (
+            <aside className="chat-reopen-rail" aria-label="Hopfälld chatt">
+              <button ref={chatReopen} type="button" className="chat-reopen-button" aria-label="Öppna chatten" title="Öppna chatten" aria-expanded={false} aria-controls="conversation-panel" onClick={reopenChat}>
+                <MessageSquare size={19} /><span>Chatt</span>
+              </button>
+            </aside>
+          )}
           <div
             className="divider"
             role="separator"
             aria-label="Ändra panelbredd"
             aria-orientation="vertical"
-            aria-valuenow={workspaceOpen ? Math.round(chatWidth) : 100}
-            aria-valuemin={25}
+            aria-valuenow={chatCollapsed ? 0 : workspaceOpen ? Math.round(chatWidth) : 100}
+            aria-valuemin={0}
             aria-valuemax={100}
             aria-valuetext={
-              workspaceOpen
+              chatCollapsed ? "Chatten hopfälld" : workspaceOpen
                 ? `Chatt ${Math.round(chatWidth)} procent`
                 : "Workspace hopfälld"
             }
@@ -411,14 +458,20 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
               if (["Enter", " ", "Home", "End"].includes(e.key)) {
                 e.preventDefault();
                 if (e.key === "Home") {
+                  setChatCollapsed(false);
                   setWorkspaceOpen(false);
                   setPane("chat");
                 } else if (e.key === "End") {
+                  setChatCollapsed(false);
                   setWorkspaceOpen(true);
                   setChatWidth(48);
-                } else toggleWorkspace();
+                } else if (chatCollapsed) reopenChat(); else toggleWorkspace();
               } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
                 e.preventDefault();
+                if (chatCollapsed) {
+                  if (e.key === "ArrowRight") reopenChat();
+                  return;
+                }
                 if (!workspaceOpen) {
                   if (e.key === "ArrowLeft") setWorkspaceOpen(true);
                   return;
@@ -431,6 +484,7 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
               }
             }}
             onDoubleClick={() => {
+              setChatCollapsed(false);
               setChatWidth(48);
               setWorkspaceOpen(true);
             }}
@@ -450,9 +504,10 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
                 return;
               const rect = split.current.getBoundingClientRect();
               const width = Math.min(
-                rect.width * 0.75,
+                rect.width - 57,
                 Math.max(64, rect.right - e.clientX),
               );
+              setChatCollapsed(false);
               latestDragWidth.current = width;
               setDragWidth(width);
               if (width > 132) setWorkspaceOpen(true);
@@ -465,11 +520,13 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
               if (width !== null && split.current) {
                 const fullWidth = split.current.getBoundingClientRect().width;
                 const close = width <= 132;
+                const closeChat = fullWidth - width - 1 <= 132;
+                setChatCollapsed(closeChat);
                 setWorkspaceOpen(!close);
                 setPane(close ? "chat" : "workspace");
-                if (!close)
+                if (!close && !closeChat)
                   setChatWidth(
-                    100 - ((Math.max(300, width) + 1) / fullWidth) * 100,
+                    Math.max(25, 100 - ((Math.max(300, width) + 1) / fullWidth) * 100),
                   );
               }
               latestDragWidth.current = null;
@@ -480,6 +537,8 @@ export default function App({ initialThreads, createRemoteChat, deleteRemoteChat
             <span className="resize-grip" aria-hidden="true" />
           </div>
           <Workspace
+            workspaceId={workspaceId}
+            onDiscuss={discussResearch}
             key={workspaceName}
             workspaceName={workspaceName}
             view={view}
